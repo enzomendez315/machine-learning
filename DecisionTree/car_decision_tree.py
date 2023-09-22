@@ -17,9 +17,6 @@ csv_file_path = os.path.join(script_directory, 'car-4', 'test.csv')
 #         #terms = line.strip().split(',')
 #         pass
 
-data = pd.read_csv(csv_file_path, header=None)
-data.columns = ['buying','maint','doors','persons','lug_boot','safety','label']
-
 def entropy(data):
     total_size = data.shape[0]
     entropy = 0
@@ -29,14 +26,30 @@ def entropy(data):
         subset_size = data[data['label'] == value].shape[0]
         if subset_size == 0:
             continue
-        entropy += - (subset_size / total_size) * np.log2(subset_size / total_size)
+        entropy -= (subset_size / total_size) * np.log2(subset_size / total_size)
     return entropy
 
 def majority_error(data):
-    pass
+    total_size = data.shape[0]
+    majority_error = 1
+    labels = data['label'].unique()
+    for value in labels:
+        # Create a subset of all rows with label = value
+        subset_size = data[data['label'] == value].shape[0]
+        subset_ratio = subset_size / total_size
+        if subset_ratio < majority_error:
+            majority_error = subset_ratio
+    return majority_error
 
 def gini_index(data):
-    pass
+    total_size = data.shape[0]
+    gini_index = 1
+    labels = data['label'].unique()
+    for value in labels:
+        # Create a subset of all rows with label = value
+        subset_size = data[data['label'] == value].shape[0]
+        gini_index -= (subset_size / total_size) ** 2
+    return gini_index
 
 def gain(data):
     pass
@@ -49,9 +62,10 @@ def ID3(data, attributes, label, depth):
 
 def main():
     print("This is the main function.")
+    data = pd.read_csv(csv_file_path, header=None)
+    data.columns = ['buying','maint','doors','persons','lug_boot','safety','label']
+    total_entropy = entropy(data)
+    print('The total entropy is ', total_entropy)
 
 if __name__ == "__main__":
     main()
-
-# total_entropy = entropy(data)
-# print('The total entropy is ', total_entropy)
