@@ -26,6 +26,7 @@ def entropy(data):
         subset_size = data[data['label'] == value].shape[0]
         if subset_size == 0:
             continue
+        print('For the label -> ', value, ' <- the ratio is ', subset_size, '/', total_size) # ----------- DELETE LATER
         entropy -= (subset_size / total_size) * np.log2(subset_size / total_size)
     return entropy
 
@@ -51,21 +52,40 @@ def gini_index(data):
         gini_index -= (subset_size / total_size) ** 2
     return gini_index
 
-def gain(data):
+def gain(feature, data, purity_measure):
+    total_size = data.shape[0]
+    weighted_average = 0
+    features = data[feature].unique()
+    subset_purity = purity_measure(data)
+    for value in features:
+        # Create a subset of all rows with label = value
+        feature_value_subset = data[data[feature] == value]
+        subset_size = feature_value_subset.shape[0]
+        feature_value_purity = purity_measure(feature_value_subset)
+        weighted_average += (subset_size / total_size) * feature_value_purity
+    return subset_purity - weighted_average
+
+def ID3_entropy(data, attributes, label, depth):
     pass
 
-def ID3(data, attributes, label, depth):
+def ID3_majority_error(data, attributes, label, depth):
     pass
 
-
-
+def ID3_gini_index(data, attributes, label, depth):
+    pass
 
 def main():
     print("This is the main function.")
     data = pd.read_csv(csv_file_path, header=None)
     data.columns = ['buying','maint','doors','persons','lug_boot','safety','label']
     total_entropy = entropy(data)
+    total_ME = majority_error(data)
+    total_GI = gini_index(data)
+    total_gain_entropy = gain('doors', data, entropy)
     print('The total entropy is ', total_entropy)
+    print('The total majority error is ', total_ME)
+    print('The total gini index is ', total_GI)
+    print('The total gain is ', total_gain_entropy)
 
 if __name__ == "__main__":
     main()
