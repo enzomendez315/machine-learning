@@ -21,6 +21,7 @@ def entropy(data):
     total_size = data.shape[0]
     entropy = 0
     labels = data['label'].unique()
+    print('The labels are ', labels, ' and the size is ', len(labels)) # ----------- DELETE LATER
     for value in labels:
         # Create a subset of all rows with label = value
         subset_size = data[data['label'] == value].shape[0]
@@ -65,6 +66,19 @@ def gain(feature, data, purity_measure):
         weighted_average += (subset_size / total_size) * feature_value_purity
     return subset_purity - weighted_average
 
+def feature_for_split(data, purity_measure):
+    # Remove label column
+    features = data.drop('label', axis=1)
+    # Set to -1 for the case that gain = 0 for some feature
+    highest_gain = -1
+    purest_feature = None
+    for feature in features:
+        feature_gain = gain(feature, data, purity_measure)
+        if highest_gain < feature_gain:
+            highest_gain = feature_gain
+            purest_feature = feature
+    return purest_feature
+
 def ID3_entropy(data, attributes, label, depth):
     pass
 
@@ -76,13 +90,13 @@ def ID3_gini_index(data, attributes, label, depth):
 
 def main():
     print("This is the main function.")
-    data = pd.read_csv(csv_file_path, header=None)
-    data.columns = ['buying','maint','doors','persons','lug_boot','safety','label']
-    total_entropy = entropy(data)
-    total_ME = majority_error(data)
-    total_GI = gini_index(data)
-    total_gain_entropy = gain('doors', data, entropy)
-    print('The total entropy is ', total_entropy)
+    dataset = pd.read_csv(csv_file_path, header=None)
+    dataset.columns = ['buying','maint','doors','persons','lug_boot','safety','label']
+    #total_entropy = entropy(dataset)
+    total_ME = majority_error(dataset)
+    total_GI = gini_index(dataset)
+    total_gain_entropy = gain('doors', dataset, entropy)
+    #print('The total entropy is ', total_entropy)
     print('The total majority error is ', total_ME)
     print('The total gini index is ', total_GI)
     print('The total gain is ', total_gain_entropy)
