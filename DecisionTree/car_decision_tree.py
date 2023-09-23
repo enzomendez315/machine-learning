@@ -9,14 +9,6 @@ script_directory = os.path.dirname(os.path.abspath(__file__))
 # Construct the full path to the CSV file
 csv_file_path = os.path.join(script_directory, 'car-4', 'test.csv')
 
-# with open(csv_file_path, 'r') as file:
-#     car_reader = csv.reader(file)
-
-#     for line in car_reader:
-#         #print(line)
-#         #terms = line.strip().split(',')
-#         pass
-
 def entropy(data):
     total_size = data.shape[0]
     entropy = 0
@@ -79,8 +71,32 @@ def feature_for_split(data, purity_measure):
             purest_feature = feature
     return purest_feature
 
-def ID3_entropy(data, attributes, label, depth):
-    pass
+def ID3_entropy(data, features, label, depth, tree):
+    # All examples have the same label
+    if len(data['label'].unique()) == 1:
+        # Return a leaf node with that label
+        return data['label'].iloc[0]
+    
+    # Features are empty
+    if len(features) == 0:
+        # Return a leaf node with the most common label
+        label_count = data['label'].value_counts()
+        return label_count.idxmax()
+
+    # Depth has been reached
+        # Return something...
+
+    purest_feature = feature_for_split(data, entropy)
+    for value in purest_feature:
+        # Add a new tree branch for every value
+
+        # Create a subset Sv of examples in S where A = v
+
+        # If S_v is emmpty, add a leaf node with the most common label in S
+
+        # Else, below this branch, add the subtree ID3(subset data S_v, list of features without the current feature)
+        pass
+    
 
 def ID3_majority_error(data, attributes, label, depth):
     pass
@@ -88,18 +104,23 @@ def ID3_majority_error(data, attributes, label, depth):
 def ID3_gini_index(data, attributes, label, depth):
     pass
 
+class Node:
+    def __init__(self, feature, values):
+        pass
+
 def main():
     print("This is the main function.")
     dataset = pd.read_csv(csv_file_path, header=None)
     dataset.columns = ['buying','maint','doors','persons','lug_boot','safety','label']
-    #total_entropy = entropy(dataset)
+    total_entropy = entropy(dataset)
     total_ME = majority_error(dataset)
     total_GI = gini_index(dataset)
     total_gain_entropy = gain('doors', dataset, entropy)
-    #print('The total entropy is ', total_entropy)
+    print('The total entropy is ', total_entropy)
     print('The total majority error is ', total_ME)
     print('The total gini index is ', total_GI)
     print('The total gain is ', total_gain_entropy)
+    dataset['label'].value_counts()
 
 if __name__ == "__main__":
     main()
