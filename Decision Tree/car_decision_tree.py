@@ -6,7 +6,8 @@ import pandas as pd
 script_directory = os.path.dirname(os.path.abspath(__file__))
 
 # Construct the full path to the CSV file
-csv_file_path = os.path.join(script_directory, 'car-4', 'train.csv')
+#csv_file_path = os.path.join(script_directory, 'car-4', 'train.csv')
+csv_file_path = os.path.join(script_directory, 'tennis', 'train.csv') # DELETE LATER ---------------------------------------------
 
 def entropy(data):
     total_size = data.shape[0]
@@ -183,8 +184,13 @@ class Node:
         self.label = label
 
 def main():
+    # dataset = pd.read_csv(csv_file_path, header=None)
+    # dataset.columns = ['buying','maint','doors','persons','lug_boot','safety','label']
+    # features = dataset.drop('label', axis=1)
+    # tree = ID3_entropy(dataset, features, 6)
+
     dataset = pd.read_csv(csv_file_path, header=None)
-    dataset.columns = ['buying','maint','doors','persons','lug_boot','safety','label']
+    dataset.columns = ['outlook','temp','humidity','wind','label']
     features = dataset.drop('label', axis=1)
     tree = ID3_entropy(dataset, features, 6)
 
