@@ -127,7 +127,7 @@ def ID3_majority_error(data, features, label, depth):
         root.values[value] = None
 
         # Create a subset Sv of examples in S where A = v
-        subset = data[data[purest_feature]] == value # VERIFY THIS LINE -------------------------------------------------
+        subset = data[data[purest_feature] == value] # VERIFY THIS LINE -------------------------------------------------
 
         # S_v is empty
         if subset.shape[0] == 0:
@@ -163,7 +163,7 @@ def ID3_gini_index(data, features, label, depth):
         root.values[value] = None
 
         # Create a subset Sv of examples in S where A = v
-        subset = data[data[purest_feature]] == value # VERIFY THIS LINE -------------------------------------------------
+        subset = data[data[purest_feature] == value] # VERIFY THIS LINE -------------------------------------------------
 
         # S_v is empty
         if subset.shape[0] == 0:
