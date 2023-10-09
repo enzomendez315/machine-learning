@@ -14,7 +14,7 @@ def entropy(data):
     entropy = 0
     labels = data['label'].unique()
     for value in labels:
-        # Create a subset of all rows with label = value
+        # Create a subset of all rows that have the same feature value
         subset_size = data[data['label'] == value].shape[0]
         if subset_size == 0:
             continue
@@ -26,7 +26,7 @@ def majority_error(data):
     majority_error = 1
     labels = data['label'].unique()
     for value in labels:
-        # Create a subset of all rows with label = value
+        # Create a subset of all rows that have the same feature value
         subset_size = data[data['label'] == value].shape[0]
         subset_ratio = subset_size / total_size
         if subset_ratio < majority_error:
@@ -38,7 +38,7 @@ def gini_index(data):
     gini_index = 1
     labels = data['label'].unique()
     for value in labels:
-        # Create a subset of all rows with label = value
+        # Create a subset of all rows that have the same feature value
         subset_size = data[data['label'] == value].shape[0]
         gini_index -= (subset_size / total_size) ** 2
     return gini_index
@@ -49,7 +49,7 @@ def gain(feature, data, purity_measure):
     features = data[feature].unique()
     subset_purity = purity_measure(data)
     for value in features:
-        # Create a subset of all rows with label = value
+        # Create a subset of all rows that have the same feature value
         feature_value_subset = data[data[feature] == value]
         subset_size = feature_value_subset.shape[0]
         feature_value_purity = purity_measure(feature_value_subset)
@@ -79,7 +79,7 @@ def ID3_entropy(data, features, depth):
     if len(features) == 0 or depth == 0:
         # Return a leaf node with the most common label
         label_count = data['label'].value_counts()
-        return Node(label=label_count.idxmax())
+        return Node(None, None, label_count.idxmax())
 
     root = Node(None, None, None)
     purest_feature = feature_for_split(data, entropy)
@@ -91,13 +91,13 @@ def ID3_entropy(data, features, depth):
         root.values[value] = None
 
         # Create a subset Sv of examples in S where A = v
-        subset = data[data[purest_feature]] == value
+        subset = data[data[purest_feature] == value] # VERIFY THIS LINE -------------------------------------------------
 
         # S_v is empty
         if subset.shape[0] == 0:
             # Add a leaf node with the most common label in S
             most_common_label = data['label'].value_counts().idxmax()
-            root.values[value] = Node(label=most_common_label)
+            root.values[value] = Node(None, None, most_common_label)
         else:
             # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
             features.remove(purest_feature)
@@ -109,13 +109,13 @@ def ID3_majority_error(data, features, label, depth):
     # All examples have the same label
     if len(data['label'].unique()) == 1:
         # Return a leaf node with that label
-        return Node(label=data['label'].iloc[0])
+        return Node(None, None, data['label'].iloc[0])
     
     # Features are empty or depth is reached
     if len(features) == 0 or depth == 0:
         # Return a leaf node with the most common label
         label_count = data['label'].value_counts()
-        return Node(label=label_count.idxmax())
+        return Node(None, None, label_count.idxmax())
 
     root = Node(None, None, None)
     purest_feature = feature_for_split(data, majority_error)
@@ -127,13 +127,13 @@ def ID3_majority_error(data, features, label, depth):
         root.values[value] = None
 
         # Create a subset Sv of examples in S where A = v
-        subset = data[data[purest_feature]] == value
+        subset = data[data[purest_feature]] == value # VERIFY THIS LINE -------------------------------------------------
 
         # S_v is empty
         if subset.shape[0] == 0:
             # Add a leaf node with the most common label in S
             most_common_label = data['label'].value_counts().idxmax()
-            root.values[value] = Node(label=most_common_label)
+            root.values[value] = Node(None, None, most_common_label)
         else:
             # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
             features.remove(purest_feature)
@@ -145,13 +145,13 @@ def ID3_gini_index(data, features, label, depth):
     # All examples have the same label
     if len(data['label'].unique()) == 1:
         # Return a leaf node with that label
-        return Node(label=data['label'].iloc[0])
+        return Node(None, None, data['label'].iloc[0])
     
     # Features are empty or depth is reached
     if len(features) == 0 or depth == 0:
         # Return a leaf node with the most common label
         label_count = data['label'].value_counts()
-        return Node(label=label_count.idxmax())
+        return Node(None, None, label_count.idxmax())
 
     root = Node(None, None, None)
     purest_feature = feature_for_split(data, gini_index)
@@ -163,13 +163,13 @@ def ID3_gini_index(data, features, label, depth):
         root.values[value] = None
 
         # Create a subset Sv of examples in S where A = v
-        subset = data[data[purest_feature]] == value
+        subset = data[data[purest_feature]] == value # VERIFY THIS LINE -------------------------------------------------
 
         # S_v is empty
         if subset.shape[0] == 0:
             # Add a leaf node with the most common label in S
             most_common_label = data['label'].value_counts().idxmax()
-            root.values[value] = Node(label=most_common_label)
+            root.values[value] = Node(None, None, most_common_label)
         else:
             # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
             features.remove(purest_feature)
@@ -193,6 +193,7 @@ def main():
     dataset.columns = ['outlook','temp','humidity','wind','label']
     features = dataset.drop('label', axis=1)
     tree = ID3_entropy(dataset, features, 6)
+    print('done')
 
 if __name__ == "__main__":
     main()
