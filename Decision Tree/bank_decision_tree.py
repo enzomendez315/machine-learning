@@ -7,13 +7,14 @@ script_directory = os.path.dirname(os.path.abspath(__file__))
 
 # Construct the full path to the CSV file
 csv_file_path = os.path.join(script_directory, 'bank-4', 'train.csv')
+csv_debug_file_path = os.path.join(script_directory, 'tennis', 'train.csv') # DELETE LATER ---------------------------------------------
 
 def entropy(data):
     total_size = data.shape[0]
     entropy = 0
     labels = data['label'].unique()
     for value in labels:
-        # Create a subset of all rows with label = value
+        # Create a subset of all rows that have the same feature value
         subset_size = data[data['label'] == value].shape[0]
         if subset_size == 0:
             continue
@@ -25,7 +26,7 @@ def majority_error(data):
     majority_error = 1
     labels = data['label'].unique()
     for value in labels:
-        # Create a subset of all rows with label = value
+        # Create a subset of all rows that have the same feature value
         subset_size = data[data['label'] == value].shape[0]
         subset_ratio = subset_size / total_size
         if subset_ratio < majority_error:
@@ -37,7 +38,7 @@ def gini_index(data):
     gini_index = 1
     labels = data['label'].unique()
     for value in labels:
-        # Create a subset of all rows with label = value
+        # Create a subset of all rows that have the same feature value
         subset_size = data[data['label'] == value].shape[0]
         gini_index -= (subset_size / total_size) ** 2
     return gini_index
@@ -48,7 +49,7 @@ def gain(feature, data, purity_measure):
     features = data[feature].unique()
     subset_purity = purity_measure(data)
     for value in features:
-        # Create a subset of all rows with label = value
+        # Create a subset of all rows that have the same feature value
         feature_value_subset = data[data[feature] == value]
         subset_size = feature_value_subset.shape[0]
         feature_value_purity = purity_measure(feature_value_subset)
@@ -72,109 +73,115 @@ def ID3_entropy(data, features, depth):
     # All examples have the same label
     if len(data['label'].unique()) == 1:
         # Return a leaf node with that label
-        return Node(label=data['label'].iloc[0])
+        return Node(None, None, data['label'].iloc[0])
     
     # Features are empty or depth is reached
     if len(features) == 0 or depth == 0:
         # Return a leaf node with the most common label
         label_count = data['label'].value_counts()
-        return Node(label=label_count.idxmax())
+        return Node(None, None, label_count.idxmax())
 
     root = Node(None, None, None)
     purest_feature = feature_for_split(data, entropy)
     root.feature = purest_feature
+    purest_feature_values = data[purest_feature].unique()
     root.values = {}
 
-    for value in purest_feature:
+    for value in purest_feature_values:
         # Add a new tree branch for every value
         root.values[value] = None
 
         # Create a subset Sv of examples in S where A = v
-        subset = data[data[purest_feature]] == value
+        subset = data[data[purest_feature] == value]
 
         # S_v is empty
         if subset.shape[0] == 0:
             # Add a leaf node with the most common label in S
             most_common_label = data['label'].value_counts().idxmax()
-            root.values[value] = Node(label=most_common_label)
+            root.values[value] = Node(None, None, most_common_label)
         else:
             # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
-            features.remove(purest_feature)
-            subtree_node = ID3_entropy(subset, features, None, depth - 1)
+            if purest_feature in features.columns:
+                features = features.drop(purest_feature, axis=1)
+            subtree_node = ID3_entropy(subset, features, depth - 1)
             root.values[value] = subtree_node
     return root 
 
-def ID3_majority_error(data, features, label, depth):
+def ID3_majority_error(data, features, depth):
     # All examples have the same label
     if len(data['label'].unique()) == 1:
         # Return a leaf node with that label
-        return Node(label=data['label'].iloc[0])
+        return Node(None, None, data['label'].iloc[0])
     
     # Features are empty or depth is reached
     if len(features) == 0 or depth == 0:
         # Return a leaf node with the most common label
         label_count = data['label'].value_counts()
-        return Node(label=label_count.idxmax())
+        return Node(None, None, label_count.idxmax())
 
     root = Node(None, None, None)
     purest_feature = feature_for_split(data, majority_error)
     root.feature = purest_feature
+    purest_feature_values = data[purest_feature].unique()
     root.values = {}
 
-    for value in purest_feature:
+    for value in purest_feature_values:
         # Add a new tree branch for every value
         root.values[value] = None
 
         # Create a subset Sv of examples in S where A = v
-        subset = data[data[purest_feature]] == value
+        subset = data[data[purest_feature] == value]
 
         # S_v is empty
         if subset.shape[0] == 0:
             # Add a leaf node with the most common label in S
             most_common_label = data['label'].value_counts().idxmax()
-            root.values[value] = Node(label=most_common_label)
+            root.values[value] = Node(None, None, most_common_label)
         else:
             # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
-            features.remove(purest_feature)
-            subtree_node = ID3_entropy(subset, features, None, depth - 1)
+            if purest_feature in features.columns:
+                features = features.drop(purest_feature, axis=1)
+            subtree_node = ID3_majority_error(subset, features, depth - 1)
             root.values[value] = subtree_node
-    return root
+    return root 
 
-def ID3_gini_index(data, features, label, depth):
+def ID3_gini_index(data, features, depth):
     # All examples have the same label
     if len(data['label'].unique()) == 1:
         # Return a leaf node with that label
-        return Node(label=data['label'].iloc[0])
+        return Node(None, None, data['label'].iloc[0])
     
     # Features are empty or depth is reached
     if len(features) == 0 or depth == 0:
         # Return a leaf node with the most common label
         label_count = data['label'].value_counts()
-        return Node(label=label_count.idxmax())
+        return Node(None, None, label_count.idxmax())
 
     root = Node(None, None, None)
     purest_feature = feature_for_split(data, gini_index)
     root.feature = purest_feature
+    purest_feature_values = data[purest_feature].unique()
     root.values = {}
 
-    for value in purest_feature:
+    for value in purest_feature_values:
         # Add a new tree branch for every value
         root.values[value] = None
 
         # Create a subset Sv of examples in S where A = v
-        subset = data[data[purest_feature]] == value
+        subset = data[data[purest_feature] == value]
 
         # S_v is empty
         if subset.shape[0] == 0:
             # Add a leaf node with the most common label in S
             most_common_label = data['label'].value_counts().idxmax()
-            root.values[value] = Node(label=most_common_label)
+            root.values[value] = Node(None, None, most_common_label)
         else:
             # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
-            features.remove(purest_feature)
-            subtree_node = ID3_entropy(subset, features, None, depth - 1)
+            if purest_feature in features.columns:
+                features = features.drop(purest_feature, axis=1)
+            subtree_node = ID3_gini_index(subset, features, depth - 1)
             root.values[value] = subtree_node
-    return root
+    return root 
 
 class Node:
     def __init__(self, feature, values, label):
@@ -184,9 +191,18 @@ class Node:
 
 def main():
     dataset = pd.read_csv(csv_file_path, header=None)
-    dataset.columns = ['buying','maint','doors','persons','lug_boot','safety','label']
+    dataset.columns = ['age','job','marital','education',
+                       'default','balance','housing', 'loan', 
+                       'contact', 'day', 'month', 'duration', 
+                       'campaign', 'pdays', 'previous', 'poutcome', 'label']
     features = dataset.drop('label', axis=1)
     tree = ID3_entropy(dataset, features, 6)
+
+    debug_dataset = pd.read_csv(csv_debug_file_path, header=None)
+    debug_dataset.columns = ['outlook','temp','humidity','wind','label']
+    debug_features = debug_dataset.drop('label', axis=1)
+    debug_tree = ID3_entropy(debug_dataset, debug_features, 6)
+    print('done')
 
 if __name__ == "__main__":
     main()
