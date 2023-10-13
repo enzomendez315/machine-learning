@@ -6,8 +6,8 @@ import pandas as pd
 script_directory = os.path.dirname(os.path.abspath(__file__))
 
 # Construct the full path to the CSV file
-#csv_file_path = os.path.join(script_directory, 'car-4', 'train.csv')
-csv_file_path = os.path.join(script_directory, 'tennis', 'train.csv') # DELETE LATER ---------------------------------------------
+csv_file_path = os.path.join(script_directory, 'car-4', 'train.csv')
+csv_debug_file_path = os.path.join(script_directory, 'tennis', 'train.csv') # DELETE LATER ---------------------------------------------
 
 def entropy(data):
     total_size = data.shape[0]
@@ -92,7 +92,7 @@ def ID3_entropy(data, features, depth):
         root.values[value] = None
 
         # Create a subset Sv of examples in S where A = v
-        subset = data[data[purest_feature] == value] # VERIFY THIS LINE -------------------------------------------------
+        subset = data[data[purest_feature] == value]
 
         # S_v is empty
         if subset.shape[0] == 0:
@@ -101,7 +101,8 @@ def ID3_entropy(data, features, depth):
             root.values[value] = Node(None, None, most_common_label)
         else:
             # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
-            features = features.drop(purest_feature, axis=1)
+            if purest_feature in features.columns:
+                features = features.drop(purest_feature, axis=1)
             subtree_node = ID3_entropy(subset, features, depth - 1)
             root.values[value] = subtree_node
     return root 
@@ -121,14 +122,15 @@ def ID3_majority_error(data, features, label, depth):
     root = Node(None, None, None)
     purest_feature = feature_for_split(data, majority_error)
     root.feature = purest_feature
+    purest_feature_values = data[purest_feature].unique()
     root.values = {}
 
-    for value in purest_feature:
+    for value in purest_feature_values:
         # Add a new tree branch for every value
         root.values[value] = None
 
         # Create a subset Sv of examples in S where A = v
-        subset = data[data[purest_feature] == value] # VERIFY THIS LINE -------------------------------------------------
+        subset = data[data[purest_feature] == value]
 
         # S_v is empty
         if subset.shape[0] == 0:
@@ -137,10 +139,11 @@ def ID3_majority_error(data, features, label, depth):
             root.values[value] = Node(None, None, most_common_label)
         else:
             # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
-            features.remove(purest_feature)
-            subtree_node = ID3_entropy(subset, features, depth - 1)
+            if purest_feature in features.columns:
+                features = features.drop(purest_feature, axis=1)
+            subtree_node = ID3_majority_error(subset, features, depth - 1)
             root.values[value] = subtree_node
-    return root
+    return root 
 
 def ID3_gini_index(data, features, label, depth):
     # All examples have the same label
@@ -157,14 +160,15 @@ def ID3_gini_index(data, features, label, depth):
     root = Node(None, None, None)
     purest_feature = feature_for_split(data, gini_index)
     root.feature = purest_feature
+    purest_feature_values = data[purest_feature].unique()
     root.values = {}
 
-    for value in purest_feature:
+    for value in purest_feature_values:
         # Add a new tree branch for every value
         root.values[value] = None
 
         # Create a subset Sv of examples in S where A = v
-        subset = data[data[purest_feature] == value] # VERIFY THIS LINE -------------------------------------------------
+        subset = data[data[purest_feature] == value]
 
         # S_v is empty
         if subset.shape[0] == 0:
@@ -173,10 +177,11 @@ def ID3_gini_index(data, features, label, depth):
             root.values[value] = Node(None, None, most_common_label)
         else:
             # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
-            features.remove(purest_feature)
-            subtree_node = ID3_entropy(subset, features, depth - 1)
+            if purest_feature in features.columns:
+                features = features.drop(purest_feature, axis=1)
+            subtree_node = ID3_gini_index(subset, features, depth - 1)
             root.values[value] = subtree_node
-    return root
+    return root 
 
 class Node:
     def __init__(self, feature, values, label):
@@ -185,15 +190,15 @@ class Node:
         self.label = label
 
 def main():
-    # dataset = pd.read_csv(csv_file_path, header=None)
-    # dataset.columns = ['buying','maint','doors','persons','lug_boot','safety','label']
-    # features = dataset.drop('label', axis=1)
-    # tree = ID3_entropy(dataset, features, 6)
-
     dataset = pd.read_csv(csv_file_path, header=None)
-    dataset.columns = ['outlook','temp','humidity','wind','label']
+    dataset.columns = ['buying','maint','doors','persons','lug_boot','safety','label']
     features = dataset.drop('label', axis=1)
     tree = ID3_entropy(dataset, features, 6)
+
+    debug_dataset = pd.read_csv(csv_debug_file_path, header=None)
+    debug_dataset.columns = ['outlook','temp','humidity','wind','label']
+    debug_features = debug_dataset.drop('label', axis=1)
+    debug_tree = ID3_entropy(debug_dataset, debug_features, 6)
     print('done')
 
 if __name__ == "__main__":
