@@ -7,7 +7,7 @@ script_directory = os.path.dirname(os.path.abspath(__file__))
 
 # Construct the full path to the CSV file
 csv_file_path = os.path.join(script_directory, '..', 'Datasets', 'car-4', 'train.csv')
-csv_debug_file_path = os.path.join(script_directory, '..', 'Datasets', 'tennis', 'train.csv') # DELETE LATER ---------------------------------------------
+csv_debug_file_path = os.path.join(script_directory, '..', 'Datasets', 'tennis', 'train.csv')
 
 def entropy(data):
     total_size = data.shape[0]
@@ -181,25 +181,38 @@ def ID3_gini_index(data, features, depth):
                 features = features.drop(purest_feature, axis=1)
             subtree_node = ID3_gini_index(subset, features, depth - 1)
             root.values[value] = subtree_node
-    return root 
+    return root
+
+def print_tree(tree, indent=0):
+    if not tree.values:
+        print(" " * indent + tree.label)
+        return
+    
+    print(" " * indent + f"{tree.feature}:")
+    next_indent = indent + 4
+
+    for feature_value, node in tree.values.items():
+        print(" " * next_indent + f"{feature_value}:")
+        print_tree(node, next_indent + 4)
 
 class Node:
     def __init__(self, feature, values, label):
         self.feature = feature
-        self.values = values # values = {'value': Node}
+        self.values = values    # values = {'value': Node}
         self.label = label
 
 def main():
     dataset = pd.read_csv(csv_file_path, header=None)
     dataset.columns = ['buying','maint','doors','persons','lug_boot','safety','label']
     features = dataset.drop('label', axis=1)
-    tree = ID3_entropy(dataset, features, 6)
+    tree = ID3_entropy(dataset, features, 3)
+    #print_tree(tree)
 
     debug_dataset = pd.read_csv(csv_debug_file_path, header=None)
-    debug_dataset.columns = ['outlook','temp','humidity','wind','label']
+    debug_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
     debug_features = debug_dataset.drop('label', axis=1)
-    debug_tree = ID3_entropy(debug_dataset, debug_features, 6)
-    print('done')
+    debug_tree = ID3_entropy(debug_dataset, debug_features, 3)
+    print_tree(debug_tree)
 
 if __name__ == "__main__":
     main()

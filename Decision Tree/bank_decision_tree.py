@@ -7,7 +7,7 @@ script_directory = os.path.dirname(os.path.abspath(__file__))
 
 # Construct the full path to the CSV file
 csv_file_path = os.path.join(script_directory, '..', 'Datasets', 'bank-4', 'train.csv')
-csv_debug_file_path = os.path.join(script_directory, '..', 'Datasets', 'tennis', 'train.csv') # DELETE LATER ---------------------------------------------
+csv_debug_file_path = os.path.join(script_directory, '..', 'Datasets', 'tennis', 'train.csv')
 
 def entropy(data):
     total_size = data.shape[0]
@@ -186,7 +186,7 @@ def ID3_gini_index(data, features, depth):
 class Node:
     def __init__(self, feature, values, label):
         self.feature = feature
-        self.values = values # values = {'value': Node}
+        self.values = values    # values = {'value': Node}
         self.label = label
 
 def main():
@@ -196,12 +196,12 @@ def main():
                        'contact', 'day', 'month', 'duration', 
                        'campaign', 'pdays', 'previous', 'poutcome', 'label']
     features = dataset.drop('label', axis=1)
-    tree = ID3_entropy(dataset, features, 6)
+    tree = ID3_entropy(dataset, features, 3)
 
     debug_dataset = pd.read_csv(csv_debug_file_path, header=None)
-    debug_dataset.columns = ['outlook','temp','humidity','wind','label']
+    debug_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
     debug_features = debug_dataset.drop('label', axis=1)
-    debug_tree = ID3_entropy(debug_dataset, debug_features, 6)
+    debug_tree = ID3_entropy(debug_dataset, debug_features, 3)
     print('done')
     # Numerical values: age, balance, day, duration, campaign, pdays, previous
 

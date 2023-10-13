@@ -4,10 +4,10 @@ Yes, No
 
 | attributes
 
-outlook:    Sunny, Overcast, Rain
-temp:       Hot, Medium, Cool
-humidity:   High, Normal, Low
-wind:       Strong, Weak
+Outlook:    Sunny, Overcast, Rain
+Temp:       Hot, Medium, Cool
+Humidity:   High, Normal, Low
+Wind:       Strong, Weak
 
 | columns
 
