@@ -6,8 +6,8 @@ import pandas as pd
 script_directory = os.path.dirname(os.path.abspath(__file__))
 
 # Construct the full path to the CSV file
-csv_file_path = os.path.join(script_directory, 'bank-4', 'train.csv')
-csv_debug_file_path = os.path.join(script_directory, 'tennis', 'train.csv') # DELETE LATER ---------------------------------------------
+csv_file_path = os.path.join(script_directory, '..', 'Datasets', 'bank-4', 'train.csv')
+csv_debug_file_path = os.path.join(script_directory, '..', 'Datasets', 'tennis', 'train.csv') # DELETE LATER ---------------------------------------------
 
 def entropy(data):
     total_size = data.shape[0]
