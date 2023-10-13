@@ -203,6 +203,7 @@ def main():
     debug_features = debug_dataset.drop('label', axis=1)
     debug_tree = ID3_entropy(debug_dataset, debug_features, 6)
     print('done')
+    # Numerical values: age, balance, day, duration, campaign, pdays, previous
 
 if __name__ == "__main__":
     main()
