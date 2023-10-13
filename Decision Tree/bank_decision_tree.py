@@ -69,7 +69,7 @@ def feature_for_split(data, purity_measure):
             purest_feature = feature
     return purest_feature
 
-def ID3_entropy(data, features, depth):
+def ID3_entropy(data, features, numerical_features, depth):
     # All examples have the same label
     if len(data['label'].unique()) == 1:
         # Return a leaf node with that label
@@ -84,28 +84,36 @@ def ID3_entropy(data, features, depth):
     root = Node(None, None, None)
     purest_feature = feature_for_split(data, entropy)
     root.feature = purest_feature
-    purest_feature_values = data[purest_feature].unique()
     root.values = {}
 
-    for value in purest_feature_values:
-        # Add a new tree branch for every value
-        root.values[value] = None
+    # Check if the purest feature is numerical. Split accordingly.
+    if purest_feature in numerical_features:
+        # Convert to binary feature.
+        median_value = data[purest_feature].median()
+        purest_feature_values = {'more than or equal to ' + str(median_value), 'less than ' + str(median_value)}
+        for value in purest_feature_values:
+            pass
+    else:
+        purest_feature_values = data[purest_feature].unique()
+        for value in purest_feature_values:
+            # Add a new tree branch for every value
+            root.values[value] = None
 
-        # Create a subset Sv of examples in S where A = v
-        subset = data[data[purest_feature] == value]
+            # Create a subset Sv of examples in S where A = v
+            subset = data[data[purest_feature] == value]
 
-        # S_v is empty
-        if subset.shape[0] == 0:
-            # Add a leaf node with the most common label in S
-            most_common_label = data['label'].value_counts().idxmax()
-            root.values[value] = Node(None, None, most_common_label)
-        else:
-            # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
-            if purest_feature in features.columns:
-                features = features.drop(purest_feature, axis=1)
-            subtree_node = ID3_entropy(subset, features, depth - 1)
-            root.values[value] = subtree_node
-    return root 
+            # S_v is empty
+            if subset.shape[0] == 0:
+                # Add a leaf node with the most common label in S
+                most_common_label = data['label'].value_counts().idxmax()
+                root.values[value] = Node(None, None, most_common_label)
+            else:
+                # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
+                if purest_feature in features.columns:
+                    features = features.drop(purest_feature, axis=1)
+                subtree_node = ID3_entropy(subset, features, depth - 1)
+                root.values[value] = subtree_node
+        return root 
 
 def ID3_majority_error(data, features, depth):
     # All examples have the same label
@@ -196,14 +204,8 @@ def main():
                        'contact', 'day', 'month', 'duration', 
                        'campaign', 'pdays', 'previous', 'poutcome', 'label']
     features = dataset.drop('label', axis=1)
-    tree = ID3_entropy(dataset, features, 3)
-
-    debug_dataset = pd.read_csv(csv_debug_file_path, header=None)
-    debug_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
-    debug_features = debug_dataset.drop('label', axis=1)
-    debug_tree = ID3_entropy(debug_dataset, debug_features, 3)
-    print('done')
-    # Numerical values: age, balance, day, duration, campaign, pdays, previous
+    numerical_features = {'age', 'balance', 'day', 'duration', 'campaign', 'pdays', 'previous'}
+    tree = ID3_entropy(dataset, features, numerical_features, 3)
 
 if __name__ == "__main__":
     main()
