@@ -107,7 +107,7 @@ def ID3_entropy(data, features, depth):
             root.values[value] = subtree_node
     return root 
 
-def ID3_majority_error(data, features, label, depth):
+def ID3_majority_error(data, features, depth):
     # All examples have the same label
     if len(data['label'].unique()) == 1:
         # Return a leaf node with that label
@@ -145,7 +145,7 @@ def ID3_majority_error(data, features, label, depth):
             root.values[value] = subtree_node
     return root 
 
-def ID3_gini_index(data, features, label, depth):
+def ID3_gini_index(data, features, depth):
     # All examples have the same label
     if len(data['label'].unique()) == 1:
         # Return a leaf node with that label
