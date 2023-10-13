@@ -73,7 +73,7 @@ def ID3_entropy(data, features, depth):
     # All examples have the same label
     if len(data['label'].unique()) == 1:
         # Return a leaf node with that label
-        return Node(label=data['label'].iloc[0])
+        return Node(None, None, data['label'].iloc[0])
     
     # Features are empty or depth is reached
     if len(features) == 0 or depth == 0:
