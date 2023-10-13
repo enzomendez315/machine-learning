@@ -84,9 +84,10 @@ def ID3_entropy(data, features, depth):
     root = Node(None, None, None)
     purest_feature = feature_for_split(data, entropy)
     root.feature = purest_feature
+    purest_feature_values = data[purest_feature].unique()
     root.values = {}
 
-    for value in purest_feature:
+    for value in purest_feature_values:
         # Add a new tree branch for every value
         root.values[value] = None
 
@@ -100,8 +101,8 @@ def ID3_entropy(data, features, depth):
             root.values[value] = Node(None, None, most_common_label)
         else:
             # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
-            features.remove(purest_feature)
-            subtree_node = ID3_entropy(subset, features, None, depth - 1)
+            features = features.drop(purest_feature, axis=1)
+            subtree_node = ID3_entropy(subset, features, depth - 1)
             root.values[value] = subtree_node
     return root 
 
@@ -137,7 +138,7 @@ def ID3_majority_error(data, features, label, depth):
         else:
             # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
             features.remove(purest_feature)
-            subtree_node = ID3_entropy(subset, features, None, depth - 1)
+            subtree_node = ID3_entropy(subset, features, depth - 1)
             root.values[value] = subtree_node
     return root
 
@@ -173,7 +174,7 @@ def ID3_gini_index(data, features, label, depth):
         else:
             # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
             features.remove(purest_feature)
-            subtree_node = ID3_entropy(subset, features, None, depth - 1)
+            subtree_node = ID3_entropy(subset, features, depth - 1)
             root.values[value] = subtree_node
     return root
 
