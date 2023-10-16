@@ -113,7 +113,7 @@ def ID3_entropy(data, features, numerical_features, depth):
                 subtree_node = ID3_entropy(subset, features, numerical_features, depth - 1)
                 root.values[value] = subtree_node
         return root
-
+    
     else:
         purest_feature_values = data[purest_feature].unique()
         for value in purest_feature_values:
@@ -136,7 +136,7 @@ def ID3_entropy(data, features, numerical_features, depth):
                 root.values[value] = subtree_node
         return root 
 
-def ID3_majority_error(data, features, depth):
+def ID3_majority_error(data, features, numerical_features, depth):
     # All examples have the same label
     if len(data['label'].unique()) == 1:
         # Return a leaf node with that label
@@ -151,30 +151,59 @@ def ID3_majority_error(data, features, depth):
     root = Node(None, None, None)
     purest_feature = feature_for_split(data, majority_error)
     root.feature = purest_feature
-    purest_feature_values = data[purest_feature].unique()
     root.values = {}
 
-    for value in purest_feature_values:
-        # Add a new tree branch for every value
-        root.values[value] = None
+    # Check if the purest feature is numerical. Split accordingly.
+    if purest_feature in numerical_features:
+        # Convert to binary feature.
+        median_value = data[purest_feature].median()
+        purest_feature_values = {'more than or equal to ' + str(median_value), 'less than ' + str(median_value)}
+        for value in purest_feature_values:
+            # Add a new tree branch for every value
+            root.values[value] = None
 
-        # Create a subset Sv of examples in S where A = v
-        subset = data[data[purest_feature] == value]
+            # Create a subset Sv of examples in S where A = v
+            if 'more than' in value:
+                subset = data[data[purest_feature] >= median_value]
+            else:
+                subset = data[data[purest_feature] < median_value]
 
-        # S_v is empty
-        if subset.shape[0] == 0:
-            # Add a leaf node with the most common label in S
-            most_common_label = data['label'].value_counts().idxmax()
-            root.values[value] = Node(None, None, most_common_label)
-        else:
-            # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
-            if purest_feature in features.columns:
-                features = features.drop(purest_feature, axis=1)
-            subtree_node = ID3_majority_error(subset, features, depth - 1)
-            root.values[value] = subtree_node
-    return root 
+            # S_v is empty
+            if subset.shape[0] == 0:
+                # Add a leaf node with the most common label in S
+                most_common_label = data['label'].value_counts().idxmax()
+                root.values[value] = Node(None, None, most_common_label)
+            else:
+                # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
+                if purest_feature in features.columns:
+                    features = features.drop(purest_feature, axis=1)
+                subtree_node = ID3_majority_error(subset, features, numerical_features, depth - 1)
+                root.values[value] = subtree_node
+        return root
+    
+    else:
+        purest_feature_values = data[purest_feature].unique()
+        for value in purest_feature_values:
+            # Add a new tree branch for every value
+            root.values[value] = None
 
-def ID3_gini_index(data, features, depth):
+            # Create a subset Sv of examples in S where A = v
+            subset = data[data[purest_feature] == value]
+
+            # S_v is empty
+            if subset.shape[0] == 0:
+                # Add a leaf node with the most common label in S
+                most_common_label = data['label'].value_counts().idxmax()
+                root.values[value] = Node(None, None, most_common_label)
+            else:
+                # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
+                if purest_feature in features.columns:
+                    features = features.drop(purest_feature, axis=1)
+                subtree_node = ID3_majority_error(subset, features, numerical_features, depth - 1)
+                root.values[value] = subtree_node
+        return root
+
+def ID3_gini_index(data, features, numerical_features, depth):
     # All examples have the same label
     if len(data['label'].unique()) == 1:
         # Return a leaf node with that label
@@ -189,28 +218,57 @@ def ID3_gini_index(data, features, depth):
     root = Node(None, None, None)
     purest_feature = feature_for_split(data, gini_index)
     root.feature = purest_feature
-    purest_feature_values = data[purest_feature].unique()
     root.values = {}
 
-    for value in purest_feature_values:
-        # Add a new tree branch for every value
-        root.values[value] = None
+    # Check if the purest feature is numerical. Split accordingly.
+    if purest_feature in numerical_features:
+        # Convert to binary feature.
+        median_value = data[purest_feature].median()
+        purest_feature_values = {'more than or equal to ' + str(median_value), 'less than ' + str(median_value)}
+        for value in purest_feature_values:
+            # Add a new tree branch for every value
+            root.values[value] = None
 
-        # Create a subset Sv of examples in S where A = v
-        subset = data[data[purest_feature] == value]
+            # Create a subset Sv of examples in S where A = v
+            if 'more than' in value:
+                subset = data[data[purest_feature] >= median_value]
+            else:
+                subset = data[data[purest_feature] < median_value]
 
-        # S_v is empty
-        if subset.shape[0] == 0:
-            # Add a leaf node with the most common label in S
-            most_common_label = data['label'].value_counts().idxmax()
-            root.values[value] = Node(None, None, most_common_label)
-        else:
-            # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
-            if purest_feature in features.columns:
-                features = features.drop(purest_feature, axis=1)
-            subtree_node = ID3_gini_index(subset, features, depth - 1)
-            root.values[value] = subtree_node
-    return root
+            # S_v is empty
+            if subset.shape[0] == 0:
+                # Add a leaf node with the most common label in S
+                most_common_label = data['label'].value_counts().idxmax()
+                root.values[value] = Node(None, None, most_common_label)
+            else:
+                # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
+                if purest_feature in features.columns:
+                    features = features.drop(purest_feature, axis=1)
+                subtree_node = ID3_gini_index(subset, features, numerical_features, depth - 1)
+                root.values[value] = subtree_node
+        return root
+    
+    else:
+        purest_feature_values = data[purest_feature].unique()
+        for value in purest_feature_values:
+            # Add a new tree branch for every value
+            root.values[value] = None
+
+            # Create a subset Sv of examples in S where A = v
+            subset = data[data[purest_feature] == value]
+
+            # S_v is empty
+            if subset.shape[0] == 0:
+                # Add a leaf node with the most common label in S
+                most_common_label = data['label'].value_counts().idxmax()
+                root.values[value] = Node(None, None, most_common_label)
+            else:
+                # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
+                if purest_feature in features.columns:
+                    features = features.drop(purest_feature, axis=1)
+                subtree_node = ID3_gini_index(subset, features, numerical_features, depth - 1)
+                root.values[value] = subtree_node
+        return root
 
 def print_tree(tree, indent=0):
     if not tree.values:
