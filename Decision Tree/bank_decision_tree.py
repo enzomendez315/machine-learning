@@ -92,7 +92,28 @@ def ID3_entropy(data, features, numerical_features, depth):
         median_value = data[purest_feature].median()
         purest_feature_values = {'more than or equal to ' + str(median_value), 'less than ' + str(median_value)}
         for value in purest_feature_values:
-            pass
+            # Add a new tree branch for every value
+            root.values[value] = None
+
+            # Create a subset Sv of examples in S where A = v
+            if 'more than' in value:
+                subset = data[data[purest_feature] >= median_value]
+            else:
+                subset = data[data[purest_feature] < median_value]
+
+            # S_v is empty
+            if subset.shape[0] == 0:
+                # Add a leaf node with the most common label in S
+                most_common_label = data['label'].value_counts().idxmax()
+                root.values[value] = Node(None, None, most_common_label)
+            else:
+                # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
+                if purest_feature in features.columns:
+                    features = features.drop(purest_feature, axis=1)
+                subtree_node = ID3_entropy(subset, features, numerical_features, depth - 1)
+                root.values[value] = subtree_node
+        return root
+
     else:
         purest_feature_values = data[purest_feature].unique()
         for value in purest_feature_values:
@@ -111,7 +132,7 @@ def ID3_entropy(data, features, numerical_features, depth):
                 # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
                 if purest_feature in features.columns:
                     features = features.drop(purest_feature, axis=1)
-                subtree_node = ID3_entropy(subset, features, depth - 1)
+                subtree_node = ID3_entropy(subset, features, numerical_features, depth - 1)
                 root.values[value] = subtree_node
         return root 
 
@@ -189,7 +210,19 @@ def ID3_gini_index(data, features, depth):
                 features = features.drop(purest_feature, axis=1)
             subtree_node = ID3_gini_index(subset, features, depth - 1)
             root.values[value] = subtree_node
-    return root 
+    return root
+
+def print_tree(tree, indent=0):
+    if not tree.values:
+        print(" " * indent + tree.label)
+        return
+    
+    print(" " * indent + f"{tree.feature}:")
+    next_indent = indent + 4
+
+    for feature_value, node in tree.values.items():
+        print(" " * next_indent + f"{feature_value}:")
+        print_tree(node, next_indent + 4)
 
 class Node:
     def __init__(self, feature, values, label):
@@ -205,7 +238,8 @@ def main():
                        'campaign', 'pdays', 'previous', 'poutcome', 'label']
     features = dataset.drop('label', axis=1)
     numerical_features = {'age', 'balance', 'day', 'duration', 'campaign', 'pdays', 'previous'}
-    tree = ID3_entropy(dataset, features, numerical_features, 3)
+    tree = ID3_entropy(dataset, features, numerical_features, 6)
+    print_tree(tree)
 
 if __name__ == "__main__":
     main()
