@@ -113,6 +113,25 @@ def decision_stumps(data, features, numerical_features, depth=1):
                 subtree_node = decision_stumps(subset, features, numerical_features, depth - 1)
                 root.values[value] = subtree_node
         return root
+    
+def calculate_alpha(error):
+    return (1/2) * np.log((1 - error) / error)
+
+def update_weights(weight, alpha, prediction, target):
+    return weight * np.exp(alpha * target * prediction)
+    
+def adaboost(X, y, number_classifiers):
+    total_rows, features = np.shape(X)
+    
+    # Initialize weights
+    weights = np.full(total_rows, (1 / total_rows))
+
+    classifiers = []
+    for i in range(number_classifiers):
+        pass
+
+def predict(X):
+    pass
 
 def print_tree(tree, indent=0):
     if not tree.values:
