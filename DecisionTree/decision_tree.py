@@ -204,7 +204,74 @@ class DecisionTree:
                     features = features.drop(purest_feature, axis=1)
                 subtree_node = self.ID3_majority_error(subset, features, depth - 1)
                 root.values[value] = subtree_node
-        return root 
+        return root
+    
+    def decision_stump(self, data, features, numerical_features, depth):
+        # All examples have the same label
+        if len(data['label'].unique()) == 1:
+            # Return a leaf node with that label
+            return Node(None, None, data['label'].iloc[0])
+        
+        # Features are empty or depth is reached
+        if len(features) == 0 or depth == 0:
+            # Return a leaf node with the most common label
+            label_count = data['label'].value_counts()
+            return Node(None, None, label_count.idxmax())
+
+        root = Node(None, None, None)
+        purest_feature = self.feature_for_split(data, self.entropy)
+        root.feature = purest_feature
+        root.values = {}
+
+        # Check if the purest feature is numerical. Split accordingly.
+        if purest_feature in numerical_features:
+            # Convert to binary feature.
+            median_value = data[purest_feature].median()
+            purest_feature_values = {'more than or equal to ' + str(median_value), 'less than ' + str(median_value)}
+            for value in purest_feature_values:
+                # Add a new tree branch for every value
+                root.values[value] = None
+
+                # Create a subset Sv of examples in S where A = v
+                if 'more than' in value:
+                    subset = data[data[purest_feature] >= median_value]
+                else:
+                    subset = data[data[purest_feature] < median_value]
+
+                # S_v is empty
+                if subset.shape[0] == 0:
+                    # Add a leaf node with the most common label in S
+                    most_common_label = data['label'].value_counts().idxmax()
+                    root.values[value] = Node(None, None, most_common_label)
+                else:
+                    # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
+                    if purest_feature in features.columns:
+                        features = features.drop(purest_feature, axis=1)
+                    subtree_node = self.decision_stump(subset, features, numerical_features, depth - 1)
+                    root.values[value] = subtree_node
+            return root
+        
+        else:
+            purest_feature_values = data[purest_feature].unique()
+            for value in purest_feature_values:
+                # Add a new tree branch for every value
+                root.values[value] = None
+
+                # Create a subset Sv of examples in S where A = v
+                subset = data[data[purest_feature] == value]
+
+                # S_v is empty
+                if subset.shape[0] == 0:
+                    # Add a leaf node with the most common label in S
+                    most_common_label = data['label'].value_counts().idxmax()
+                    root.values[value] = Node(None, None, most_common_label)
+                else:
+                    # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
+                    if purest_feature in features.columns:
+                        features = features.drop(purest_feature, axis=1)
+                    subtree_node = self.decision_stump(subset, features, numerical_features, depth - 1)
+                    root.values[value] = subtree_node
+            return root
 
     def ID3_gini_index(self, data, features, depth):
         # All examples have the same label
@@ -276,15 +343,15 @@ def main():
     car_dataset.columns = ['buying','maint','doors','persons','lug_boot','safety','label']
     features = car_dataset.drop('label', axis=1)
     DT = DecisionTree()
-    # car_tree = DT.ID3_entropy(car_dataset, features, 3)
-    # DT.print_tree(car_tree)
+    car_tree = DT.ID3_entropy(car_dataset, features, 3)
+    DT.print_tree(car_tree)
 
-    # # Using tennis dataset
-    # tennis_dataset = pd.read_csv(tennis_file_path, header=None)
-    # tennis_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
-    # debug_features = tennis_dataset.drop('label', axis=1)
-    # tennis_tree = DT.ID3_entropy(tennis_dataset, debug_features, 3)
-    # DT.print_tree(tennis_tree)
+    # Using tennis dataset
+    tennis_dataset = pd.read_csv(tennis_file_path, header=None)
+    tennis_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
+    debug_features = tennis_dataset.drop('label', axis=1)
+    tennis_tree = DT.ID3_entropy(tennis_dataset, debug_features, 3)
+    DT.print_tree(tennis_tree)
 
     # Using bank dataset
     bank_dataset = pd.read_csv(bank_file_path, header=None)

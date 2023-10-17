@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
+from DecisionTree import decision_tree
 
 # Get the directory of the script
 script_directory = os.path.dirname(os.path.abspath(__file__))
