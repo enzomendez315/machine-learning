@@ -1,15 +1,8 @@
 import os
+import sys
 import numpy as np
 import pandas as pd
-from ..DecisionTree import decision_tree as DT
-
-# Get the directory of the script
-script_directory = os.path.dirname(os.path.abspath(__file__))
-
-# Construct the full path to the CSV file
-csv_file_path = os.path.join(script_directory, '..', 'Datasets', 'bank-4', 'train.csv')
-csv_debug_file_path = os.path.join(script_directory, '..', 'Datasets', 'tennis', 'train.csv')
-
+from ..DecisionTree import decision_tree
 
 def calculate_alpha(error):
     return (1/2) * np.log((1 - error) / error)
