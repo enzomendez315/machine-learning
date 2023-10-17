@@ -120,15 +120,15 @@ def calculate_alpha(error):
 def update_weights(weight, alpha, prediction, target):
     return weight * np.exp(alpha * target * prediction)
     
-def adaboost(X, y, number_classifiers):
-    total_rows, features = np.shape(X)
+def adaboost(data, features, numerical_features, number_classifiers):
+    total_rows = data.shape[0]
     
     # Initialize weights
     weights = np.full(total_rows, (1 / total_rows))
 
     classifiers = []
     for i in range(number_classifiers):
-        pass
+        stump = decision_stumps(data, features, numerical_features)
 
 def predict(X):
     pass
