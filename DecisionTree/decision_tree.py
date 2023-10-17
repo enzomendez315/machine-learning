@@ -167,46 +167,8 @@ class DecisionTree:
                     subtree_node = self.ID3_entropy_numerical(subset, features, numerical_features, depth - 1)
                     root.values[value] = subtree_node
             return root
-
-    def ID3_majority_error(self, data, features, depth):
-        # All examples have the same label
-        if len(data['label'].unique()) == 1:
-            # Return a leaf node with that label
-            return Node(None, None, data['label'].iloc[0])
         
-        # Features are empty or depth is reached
-        if len(features) == 0 or depth == 0:
-            # Return a leaf node with the most common label
-            label_count = data['label'].value_counts()
-            return Node(None, None, label_count.idxmax())
-
-        root = Node(None, None, None)
-        purest_feature = self.feature_for_split(data, self.majority_error)
-        root.feature = purest_feature
-        purest_feature_values = data[purest_feature].unique()
-        root.values = {}
-
-        for value in purest_feature_values:
-            # Add a new tree branch for every value
-            root.values[value] = None
-
-            # Create a subset Sv of examples in S where A = v
-            subset = data[data[purest_feature] == value]
-
-            # S_v is empty
-            if subset.shape[0] == 0:
-                # Add a leaf node with the most common label in S
-                most_common_label = data['label'].value_counts().idxmax()
-                root.values[value] = Node(None, None, most_common_label)
-            else:
-                # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
-                if purest_feature in features.columns:
-                    features = features.drop(purest_feature, axis=1)
-                subtree_node = self.ID3_majority_error(subset, features, depth - 1)
-                root.values[value] = subtree_node
-        return root
-    
-    def decision_stump(self, data, features, numerical_features, depth):
+    def decision_stump(self, data, features, numerical_features, depth=1):
         # All examples have the same label
         if len(data['label'].unique()) == 1:
             # Return a leaf node with that label
@@ -272,6 +234,44 @@ class DecisionTree:
                     subtree_node = self.decision_stump(subset, features, numerical_features, depth - 1)
                     root.values[value] = subtree_node
             return root
+
+    def ID3_majority_error(self, data, features, depth):
+        # All examples have the same label
+        if len(data['label'].unique()) == 1:
+            # Return a leaf node with that label
+            return Node(None, None, data['label'].iloc[0])
+        
+        # Features are empty or depth is reached
+        if len(features) == 0 or depth == 0:
+            # Return a leaf node with the most common label
+            label_count = data['label'].value_counts()
+            return Node(None, None, label_count.idxmax())
+
+        root = Node(None, None, None)
+        purest_feature = self.feature_for_split(data, self.majority_error)
+        root.feature = purest_feature
+        purest_feature_values = data[purest_feature].unique()
+        root.values = {}
+
+        for value in purest_feature_values:
+            # Add a new tree branch for every value
+            root.values[value] = None
+
+            # Create a subset Sv of examples in S where A = v
+            subset = data[data[purest_feature] == value]
+
+            # S_v is empty
+            if subset.shape[0] == 0:
+                # Add a leaf node with the most common label in S
+                most_common_label = data['label'].value_counts().idxmax()
+                root.values[value] = Node(None, None, most_common_label)
+            else:
+                # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
+                if purest_feature in features.columns:
+                    features = features.drop(purest_feature, axis=1)
+                subtree_node = self.ID3_majority_error(subset, features, depth - 1)
+                root.values[value] = subtree_node
+        return root
 
     def ID3_gini_index(self, data, features, depth):
         # All examples have the same label
