@@ -67,15 +67,15 @@ class DecisionTree:
         # All examples have the same label
         if len(data['label'].unique()) == 1:
             # Return a leaf node with that label
-            return Node(None, None, data['label'].iloc[0])
+            return Node(label=data['label'].iloc[0])
         
         # Features are empty or depth is reached
         if len(features) == 0 or depth == 0:
             # Return a leaf node with the most common label
             label_count = data['label'].value_counts()
-            return Node(None, None, label_count.idxmax())
+            return Node(label=label_count.idxmax())
 
-        root = Node(None, None, None)
+        root = Node()
         purest_feature = self.feature_for_split(data, self.entropy)
         root.feature = purest_feature
         purest_feature_values = data[purest_feature].unique()
@@ -92,7 +92,7 @@ class DecisionTree:
             if subset.shape[0] == 0:
                 # Add a leaf node with the most common label in S
                 most_common_label = data['label'].value_counts().idxmax()
-                root.values[value] = Node(None, None, most_common_label)
+                root.values[value] = Node(label=most_common_label)
             else:
                 # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
                 if purest_feature in features.columns:
@@ -105,15 +105,15 @@ class DecisionTree:
         # All examples have the same label
         if len(data['label'].unique()) == 1:
             # Return a leaf node with that label
-            return Node(None, None, data['label'].iloc[0])
+            return Node(label=data['label'].iloc[0])
         
         # Features are empty or depth is reached
         if len(features) == 0 or depth == 0:
             # Return a leaf node with the most common label
             label_count = data['label'].value_counts()
-            return Node(None, None, label_count.idxmax())
+            return Node(label=label_count.idxmax())
 
-        root = Node(None, None, None)
+        root = Node()
         purest_feature = self.feature_for_split(data, self.entropy)
         root.feature = purest_feature
         root.values = {}
@@ -122,6 +122,7 @@ class DecisionTree:
         if purest_feature in numerical_features:
             # Convert to binary feature.
             median_value = data[purest_feature].median()
+            print('The media when building tree is', median_value, 'for', purest_feature, 'and the size is', data[purest_feature].shape[0])    # DELETE LATER!! --------------------------------------------------------------
             purest_feature_values = {'more than or equal to ' + str(median_value), 'less than ' + str(median_value)}
             for value in purest_feature_values:
                 # Add a new tree branch for every value
@@ -137,7 +138,7 @@ class DecisionTree:
                 if subset.shape[0] == 0:
                     # Add a leaf node with the most common label in S
                     most_common_label = data['label'].value_counts().idxmax()
-                    root.values[value] = Node(None, None, most_common_label)
+                    root.values[value] = Node(label=most_common_label)
                 else:
                     # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
                     if purest_feature in features.columns:
@@ -159,7 +160,7 @@ class DecisionTree:
                 if subset.shape[0] == 0:
                     # Add a leaf node with the most common label in S
                     most_common_label = data['label'].value_counts().idxmax()
-                    root.values[value] = Node(None, None, most_common_label)
+                    root.values[value] = Node(label=most_common_label)
                 else:
                     # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
                     if purest_feature in features.columns:
@@ -172,15 +173,15 @@ class DecisionTree:
         # All examples have the same label
         if len(data['label'].unique()) == 1:
             # Return a leaf node with that label
-            return Node(None, None, data['label'].iloc[0])
+            return Node(label=data['label'].iloc[0])
         
         # Features are empty or depth is reached
         if len(features) == 0 or depth == 0:
             # Return a leaf node with the most common label
             label_count = data['label'].value_counts()
-            return Node(None, None, label_count.idxmax())
+            return Node(label=label_count.idxmax())
 
-        root = Node(None, None, None)
+        root = Node()
         purest_feature = self.feature_for_split(data, self.entropy)
         root.feature = purest_feature
         root.values = {}
@@ -204,7 +205,7 @@ class DecisionTree:
                 if subset.shape[0] == 0:
                     # Add a leaf node with the most common label in S
                     most_common_label = data['label'].value_counts().idxmax()
-                    root.values[value] = Node(None, None, most_common_label)
+                    root.values[value] = Node(label=most_common_label)
                 else:
                     # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
                     if purest_feature in features.columns:
@@ -226,7 +227,7 @@ class DecisionTree:
                 if subset.shape[0] == 0:
                     # Add a leaf node with the most common label in S
                     most_common_label = data['label'].value_counts().idxmax()
-                    root.values[value] = Node(None, None, most_common_label)
+                    root.values[value] = Node(label=most_common_label)
                 else:
                     # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
                     if purest_feature in features.columns:
@@ -239,15 +240,15 @@ class DecisionTree:
         # All examples have the same label
         if len(data['label'].unique()) == 1:
             # Return a leaf node with that label
-            return Node(None, None, data['label'].iloc[0])
+            return Node(label=data['label'].iloc[0])
         
         # Features are empty or depth is reached
         if len(features) == 0 or depth == 0:
             # Return a leaf node with the most common label
             label_count = data['label'].value_counts()
-            return Node(None, None, label_count.idxmax())
+            return Node(label=label_count.idxmax())
 
-        root = Node(None, None, None)
+        root = Node()
         purest_feature = self.feature_for_split(data, self.majority_error)
         root.feature = purest_feature
         purest_feature_values = data[purest_feature].unique()
@@ -264,7 +265,7 @@ class DecisionTree:
             if subset.shape[0] == 0:
                 # Add a leaf node with the most common label in S
                 most_common_label = data['label'].value_counts().idxmax()
-                root.values[value] = Node(None, None, most_common_label)
+                root.values[value] = Node(label=most_common_label)
             else:
                 # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
                 if purest_feature in features.columns:
@@ -277,13 +278,13 @@ class DecisionTree:
         # All examples have the same label
         if len(data['label'].unique()) == 1:
             # Return a leaf node with that label
-            return Node(None, None, data['label'].iloc[0])
+            return Node(label=data['label'].iloc[0])
         
         # Features are empty or depth is reached
         if len(features) == 0 or depth == 0:
             # Return a leaf node with the most common label
             label_count = data['label'].value_counts()
-            return Node(None, None, label_count.idxmax())
+            return Node(label=label_count.idxmax())
 
         root = Node(None, None, None)
         purest_feature = self.feature_for_split(data, self.gini_index)
@@ -302,7 +303,7 @@ class DecisionTree:
             if subset.shape[0] == 0:
                 # Add a leaf node with the most common label in S
                 most_common_label = data['label'].value_counts().idxmax()
-                root.values[value] = Node(None, None, most_common_label)
+                root.values[value] = Node(label=most_common_label)
             else:
                 # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
                 if purest_feature in features.columns:
@@ -324,6 +325,20 @@ class DecisionTree:
         
         # Get the feature value using the feature found in tree
         feature_value = data.at[row_index, tree.feature]
+
+        # Handle numerical values appropriately
+        if pd.api.types.is_numeric_dtype(data[tree.feature]):     # if isinstance(feature_value, (int, float)):
+            median_value = data[tree.feature].median()
+            print('The media when predicting error is', median_value, 'for', tree.feature, 'and the size is', data[tree.feature].shape[0])    # DELETE LATER!! --------------------------------------------------------------
+            if feature_value >= median_value:
+                subtree = tree.values['more than or equal to ' + str(median_value)]
+                self._predict_label(subtree, data, row_index)
+                return
+            else:
+                subtree = tree.values['less than ' + str(median_value)]
+                self._predict_label(subtree, data, row_index)
+                return
+            
         subtree = tree.values[feature_value]
         self._predict_label(subtree, data, row_index)
 
@@ -347,10 +362,11 @@ class DecisionTree:
             self.print_tree(subtree, next_indent + 4)
 
 class Node:
-    def __init__(self, feature, values, label):
+    def __init__(self, feature=None, values=None, label=None, median=None):
         self.feature = feature
         self.values = values    # values = {'value': Node}
         self.label = label
+        self.median = median
 
 def main():
     # Get the directory of the script
@@ -365,52 +381,66 @@ def main():
 
     DT = DecisionTree()
 
-    # Using car dataset
-        # Upload training dataset
-    car_train_dataset = pd.read_csv(car_train_path, header=None)
-    car_train_dataset.columns = ['buying','maint','doors','persons','lug_boot','safety','label']
-    car_features = car_train_dataset.drop('label', axis=1)
-        # Upload testing dataset
-    car_test_dataset = pd.read_csv(car_test_path, header=None)
-    car_test_dataset.columns = ['buying','maint','doors','persons','lug_boot','safety','label']
-        # Create copy of testing dataset for predicting
-    car_predicted_dataset = pd.DataFrame(car_test_dataset)
-    car_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
-        # Construct the tree, predict and compare
-    car_tree = DT.ID3_entropy(car_train_dataset, car_features, 3)
-    car_predicted_dataset = DT.predict(car_tree, car_predicted_dataset)
-    car_error = DT.prediction_error(car_test_dataset['label'].to_numpy(), car_predicted_dataset['label'].to_numpy())
-    DT.print_tree(car_tree)
-    print('The prediction error for this tree is', car_error)
+    # # Using car dataset
+    #     # Upload training dataset
+    # car_train_dataset = pd.read_csv(car_train_path, header=None)
+    # car_train_dataset.columns = ['buying','maint','doors','persons','lug_boot','safety','label']
+    # car_features = car_train_dataset.drop('label', axis=1)
+    #     # Upload testing dataset
+    # car_test_dataset = pd.read_csv(car_test_path, header=None)
+    # car_test_dataset.columns = ['buying','maint','doors','persons','lug_boot','safety','label']
+    #     # Create copy of testing dataset for predicting
+    # car_predicted_dataset = pd.DataFrame(car_test_dataset)
+    # car_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
+    #     # Construct the tree, predict and compare
+    # car_tree = DT.ID3_entropy(car_train_dataset, car_features, 3)
+    # car_predicted_dataset = DT.predict(car_tree, car_predicted_dataset)
+    # car_error = DT.prediction_error(car_test_dataset['label'].to_numpy(), car_predicted_dataset['label'].to_numpy())
+    # DT.print_tree(car_tree)
+    # print('The prediction error for this tree is', car_error)
 
-    # Using tennis dataset
-        # Upload training dataset
-    tennis_train_dataset = pd.read_csv(tennis_train_path, header=None)
-    tennis_train_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
-    tennis_features = tennis_train_dataset.drop('label', axis=1)
-        # Upload testing dataset
-    tennis_test_dataset = pd.read_csv(tennis_train_path, header=None)
-    tennis_test_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
-        # Create copy of testing dataset for predicting
-    tennis_predicted_dataset = pd.DataFrame(tennis_test_dataset)
-    tennis_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
-        # Construct the tree, predict and compare
-    tennis_tree = DT.ID3_entropy(tennis_train_dataset, tennis_features, 3)
-    tennis_predicted_dataset = DT.predict(tennis_tree, tennis_predicted_dataset)
-    tennis_error = DT.prediction_error(tennis_test_dataset['label'].to_numpy(), tennis_predicted_dataset['label'].to_numpy())
-    DT.print_tree(tennis_tree)
-    print('The prediction error for this tree is', tennis_error)
+    # # Using tennis dataset
+    #     # Upload training dataset
+    # tennis_train_dataset = pd.read_csv(tennis_train_path, header=None)
+    # tennis_train_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
+    # tennis_features = tennis_train_dataset.drop('label', axis=1)
+    #     # Upload testing dataset
+    # tennis_test_dataset = pd.read_csv(tennis_train_path, header=None)
+    # tennis_test_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
+    #     # Create copy of testing dataset for predicting
+    # tennis_predicted_dataset = pd.DataFrame(tennis_test_dataset)
+    # tennis_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
+    #     # Construct the tree, predict and compare
+    # tennis_tree = DT.ID3_entropy(tennis_train_dataset, tennis_features, 3)
+    # tennis_predicted_dataset = DT.predict(tennis_tree, tennis_predicted_dataset)
+    # tennis_error = DT.prediction_error(tennis_test_dataset['label'].to_numpy(), tennis_predicted_dataset['label'].to_numpy())
+    # DT.print_tree(tennis_tree)
+    # print('The prediction error for this tree is', tennis_error)
 
     # Using bank dataset
-    bank_dataset = pd.read_csv(bank_train_path, header=None)
-    bank_dataset.columns = ['age','job','marital','education',
+        # Upload training dataset
+    bank_train_dataset = pd.read_csv(bank_train_path, header=None)
+    bank_train_dataset.columns = ['age','job','marital','education',
                        'default','balance','housing', 'loan', 
                        'contact', 'day', 'month', 'duration', 
                        'campaign', 'pdays', 'previous', 'poutcome', 'label']
-    bank_features = bank_dataset.drop('label', axis=1)
+    bank_features = bank_train_dataset.drop('label', axis=1)
     numerical_features = {'age', 'balance', 'day', 'duration', 'campaign', 'pdays', 'previous'}
-    bank_tree = DT.ID3_entropy_numerical(bank_dataset, bank_features, numerical_features, 6)
+        # Upload testing dataset
+    bank_test_dataset = pd.read_csv(bank_test_path, header=None)
+    bank_test_dataset.columns = ['age','job','marital','education',
+                       'default','balance','housing', 'loan', 
+                       'contact', 'day', 'month', 'duration', 
+                       'campaign', 'pdays', 'previous', 'poutcome', 'label']
+        # Create copy of testing dataset for predicting
+    bank_predicted_dataset = pd.DataFrame(bank_test_dataset)
+    bank_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
+        # Construct the tree, predict and compare
+    bank_tree = DT.ID3_entropy_numerical(bank_train_dataset, bank_features, numerical_features, 3)
+    bank_predicted_dataset = DT.predict(bank_tree, bank_predicted_dataset)
+    bank_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
     DT.print_tree(bank_tree)
+    print('The prediction error for this tree is', bank_error)
 
 if __name__ == "__main__":
     main()
