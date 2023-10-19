@@ -13,10 +13,12 @@ def adaboost(data, features, numerical_features, number_classifiers):
     
     # Initialize weights
     weights = np.full(total_rows, (1 / total_rows))
+    
 
     classifiers = []
     for i in range(number_classifiers):
-        stump = DT.decision_stumps(data, features, numerical_features)
+        DT = DecisionTree()
+        stump = DT.decision_stump(data, features, numerical_features)
 
 def predict(X):
     pass

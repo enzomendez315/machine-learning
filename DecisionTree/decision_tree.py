@@ -310,6 +310,22 @@ class DecisionTree:
                 subtree_node = self.ID3_gini_index(subset, features, depth - 1)
                 root.values[value] = subtree_node
         return root
+    
+    def predict(self, tree, data):
+        for index, row in data.iterrows():
+            self._predict_label(self, tree, data, index)
+        return data
+    
+    def _predict_label(self, tree, data, row_index):
+        # Leaf node indicates there is a label
+        if not tree.values:
+            data.at[row_index, 'label'] = tree.label
+            return
+        
+        # Get the feature value using the feature found in tree
+        feature_value = data.at[row_index, tree.feature]
+        subtree = tree.values[feature_value]
+        self._predict_label(subtree, data, row_index)
 
     def print_tree(self, tree, indent=0):
         if not tree.values:
@@ -319,9 +335,9 @@ class DecisionTree:
         print(" " * indent + f"{tree.feature}:")
         next_indent = indent + 4
 
-        for feature_value, node in tree.values.items():
+        for feature_value, subtree in tree.values.items():
             print(" " * next_indent + f"{feature_value}:")
-            self.print_tree(node, next_indent + 4)
+            self.print_tree(subtree, next_indent + 4)
 
 class Node:
     def __init__(self, feature, values, label):
