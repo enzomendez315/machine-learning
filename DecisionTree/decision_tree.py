@@ -312,8 +312,8 @@ class DecisionTree:
         return root
     
     def predict(self, tree, data):
-        for index, row in data.iterrows():
-            self._predict_label(self, tree, data, index)
+        for index, _ in data.iterrows():
+            self._predict_label(tree, data, index)
         return data
     
     def _predict_label(self, tree, data, row_index):
@@ -326,6 +326,13 @@ class DecisionTree:
         feature_value = data.at[row_index, tree.feature]
         subtree = tree.values[feature_value]
         self._predict_label(subtree, data, row_index)
+
+    def prediction_error(self, actual_labels, predicted_labels):
+        counter = 0
+        for i in range(len(actual_labels)):
+            if actual_labels[i] != predicted_labels[i]:
+                counter = counter + 1
+        return counter / len(actual_labels)
 
     def print_tree(self, tree, indent=0):
         if not tree.values:
@@ -350,34 +357,59 @@ def main():
     script_directory = os.path.dirname(os.path.abspath(__file__))
 
     # Construct the full path to the CSV files
-    car_file_path = os.path.join(script_directory, '..', 'Datasets', 'car-4', 'train.csv')
-    tennis_file_path = os.path.join(script_directory, '..', 'Datasets', 'tennis', 'train.csv')
-    bank_file_path = os.path.join(script_directory, '..', 'Datasets', 'bank-4', 'train.csv')
+    car_train_path = os.path.join(script_directory, '..', 'Datasets', 'car-4', 'train.csv')
+    tennis_train_path = os.path.join(script_directory, '..', 'Datasets', 'tennis', 'train.csv')
+    bank_train_path = os.path.join(script_directory, '..', 'Datasets', 'bank-4', 'train.csv')
+    car_test_path = os.path.join(script_directory, '..', 'Datasets', 'car-4', 'test.csv')
+    bank_test_path = os.path.join(script_directory, '..', 'Datasets', 'bank-4', 'test.csv')
+
+    DT = DecisionTree()
 
     # Using car dataset
-    car_dataset = pd.read_csv(car_file_path, header=None)
-    car_dataset.columns = ['buying','maint','doors','persons','lug_boot','safety','label']
-    features = car_dataset.drop('label', axis=1)
-    DT = DecisionTree()
-    car_tree = DT.ID3_entropy(car_dataset, features, 3)
+        # Upload training dataset
+    car_train_dataset = pd.read_csv(car_train_path, header=None)
+    car_train_dataset.columns = ['buying','maint','doors','persons','lug_boot','safety','label']
+    car_features = car_train_dataset.drop('label', axis=1)
+        # Upload testing dataset
+    car_test_dataset = pd.read_csv(car_test_path, header=None)
+    car_test_dataset.columns = ['buying','maint','doors','persons','lug_boot','safety','label']
+        # Create copy of testing dataset for predicting
+    car_predicted_dataset = pd.DataFrame(car_test_dataset)
+    car_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
+        # Construct the tree, predict and compare
+    car_tree = DT.ID3_entropy(car_train_dataset, car_features, 3)
+    car_predicted_dataset = DT.predict(car_tree, car_predicted_dataset)
+    car_error = DT.prediction_error(car_test_dataset['label'].to_numpy(), car_predicted_dataset['label'].to_numpy())
     DT.print_tree(car_tree)
+    print('The prediction error for this tree is', car_error)
 
     # Using tennis dataset
-    tennis_dataset = pd.read_csv(tennis_file_path, header=None)
-    tennis_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
-    debug_features = tennis_dataset.drop('label', axis=1)
-    tennis_tree = DT.ID3_entropy(tennis_dataset, debug_features, 3)
+        # Upload training dataset
+    tennis_train_dataset = pd.read_csv(tennis_train_path, header=None)
+    tennis_train_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
+    tennis_features = tennis_train_dataset.drop('label', axis=1)
+        # Upload testing dataset
+    tennis_test_dataset = pd.read_csv(tennis_train_path, header=None)
+    tennis_test_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
+        # Create copy of testing dataset for predicting
+    tennis_predicted_dataset = pd.DataFrame(tennis_test_dataset)
+    tennis_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
+        # Construct the tree, predict and compare
+    tennis_tree = DT.ID3_entropy(tennis_train_dataset, tennis_features, 3)
+    tennis_predicted_dataset = DT.predict(tennis_tree, tennis_predicted_dataset)
+    tennis_error = DT.prediction_error(tennis_test_dataset['label'].to_numpy(), tennis_predicted_dataset['label'].to_numpy())
     DT.print_tree(tennis_tree)
+    print('The prediction error for this tree is', tennis_error)
 
     # Using bank dataset
-    bank_dataset = pd.read_csv(bank_file_path, header=None)
+    bank_dataset = pd.read_csv(bank_train_path, header=None)
     bank_dataset.columns = ['age','job','marital','education',
                        'default','balance','housing', 'loan', 
                        'contact', 'day', 'month', 'duration', 
                        'campaign', 'pdays', 'previous', 'poutcome', 'label']
-    features = bank_dataset.drop('label', axis=1)
+    bank_features = bank_dataset.drop('label', axis=1)
     numerical_features = {'age', 'balance', 'day', 'duration', 'campaign', 'pdays', 'previous'}
-    bank_tree = DT.ID3_entropy_numerical(bank_dataset, features, numerical_features, 6)
+    bank_tree = DT.ID3_entropy_numerical(bank_dataset, bank_features, numerical_features, 6)
     DT.print_tree(bank_tree)
 
 if __name__ == "__main__":
