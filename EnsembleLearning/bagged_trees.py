@@ -157,7 +157,7 @@ class DecisionTree:
                 subtree = tree.values['less than ' + str(median_value)]
                 self._predict_label(subtree, dataset, row_index)
                 return
-            
+        
         if feature_value not in tree.values:
             feature_value = random.choice(list(tree.values.keys()))
         subtree = tree.values[feature_value]

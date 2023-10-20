@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
+import random
 
 class DecisionTree:
     def entropy(self, dataset):
@@ -37,10 +38,9 @@ class DecisionTree:
             gini_index -= (subset_size / total_size) ** 2
         return gini_index
 
-    def gain(self, feature, dataset, purity_measure):
+    def gain(self, feature, dataset, features, purity_measure):
         total_size = dataset.shape[0]
         weighted_average = 0
-        features = dataset[feature].unique()
         subset_purity = purity_measure(dataset)
         for value in features:
             # Create a subset of all rows that have the same feature value
@@ -50,14 +50,12 @@ class DecisionTree:
             weighted_average += (subset_size / total_size) * feature_value_purity
         return subset_purity - weighted_average
 
-    def feature_for_split(self, dataset, purity_measure):
-        # Remove label column
-        features = dataset.drop('label', axis=1)
+    def feature_for_split(self, dataset, features, purity_measure):
         # Set to -1 for the case that gain = 0 for some feature
         highest_gain = -1
         purest_feature = None
         for feature in features:
-            feature_gain = self.gain(feature, dataset, purity_measure)
+            feature_gain = self.gain(feature, dataset, features, purity_measure)
             if highest_gain < feature_gain:
                 highest_gain = feature_gain
                 purest_feature = feature
@@ -76,7 +74,7 @@ class DecisionTree:
             return Node(label=label_count.idxmax())
 
         root = Node()
-        purest_feature = self.feature_for_split(dataset, self.entropy)
+        purest_feature = self.feature_for_split(dataset, features, self.entropy)
         root.feature = purest_feature
         root.values = {}
 
@@ -157,6 +155,8 @@ class DecisionTree:
                 self._predict_label(subtree, dataset, row_index)
                 return
             
+        if feature_value not in tree.values:
+            feature_value = random.choice(list(tree.values.keys()))
         subtree = tree.values[feature_value]
         self._predict_label(subtree, dataset, row_index)
 
