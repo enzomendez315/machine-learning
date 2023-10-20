@@ -235,9 +235,9 @@ def main():
         # Upload training dataset
     bank_train_dataset = pd.read_csv(bank_train_path, header=None)
     bank_train_dataset.columns = ['age','job','marital','education',
-                       'default','balance','housing', 'loan', 
-                       'contact', 'day', 'month', 'duration', 
-                       'campaign', 'pdays', 'previous', 'poutcome', 'label']
+                                'default','balance','housing', 'loan', 
+                                'contact', 'day', 'month', 'duration', 
+                                'campaign', 'pdays', 'previous', 'poutcome', 'label']
     bank_features = {'age': [], 
                     'job': ['admin', 'unknown', 'unemployed', 'management', 
                             'housemaid', 'entrepreneur', 'student', 'blue-collar', 
@@ -260,24 +260,22 @@ def main():
         # Upload testing dataset
     bank_test_dataset = pd.read_csv(bank_test_path, header=None)
     bank_test_dataset.columns = ['age','job','marital','education',
-                       'default','balance','housing', 'loan', 
-                       'contact', 'day', 'month', 'duration', 
-                       'campaign', 'pdays', 'previous', 'poutcome', 'label']
+                                'default','balance','housing', 'loan', 
+                                'contact', 'day', 'month', 'duration', 
+                                'campaign', 'pdays', 'previous', 'poutcome', 'label']
         # Create copy of testing dataset for predicting
     bank_predicted_dataset = pd.DataFrame(bank_test_dataset)
     bank_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
-    #     # Construct the tree, predict and compare
-    # bank_stump = DT.ID3(bank_train_dataset, bank_features, 1)
-    # bank_predicted_dataset = DT.predict(bank_stump, bank_predicted_dataset)
-    # bank_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
-    # DT.print_tree(bank_stump)
-    # print('The prediction error for this tree is', bank_error)
 
     # Vary the number of trees from 1 to 500, report how the training 
     # and test errors vary along with the tree number in a figure.
-    bank_predicted_dataset = BT.bagging(bank_train_dataset, bank_predicted_dataset, bank_features, 1)
-    bank_bagging_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
-    print('The prediction error for this tree is', bank_bagging_error)
+    for number_of_trees in range(1, 11):
+        bank_predicted_dataset = BT.bagging(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees)
+        bank_training_error = DT.prediction_error(bank_train_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+        bank_testing_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+        print('Bagging using', number_of_trees, 'trees:')
+        print('Training error is', bank_training_error)
+        print('Testing error is', bank_testing_error)
 
 
     # tennis_train_path = os.path.join(script_directory, '..', 'Datasets', 'tennis', 'train.csv')
