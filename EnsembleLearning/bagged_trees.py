@@ -82,7 +82,7 @@ class DecisionTree:
         root.values = {}
 
         # Check if the purest feature is numerical. Split accordingly.
-        if pd.api.types.is_numeric_dtype(dataset[purest_feature]):
+        if not features[purest_feature]:
             # Convert to binary feature.
             median_value = dataset[purest_feature].median()
             root.median = median_value
@@ -104,14 +104,14 @@ class DecisionTree:
                     root.values[value] = Node(label=most_common_label)
                 else:
                     # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
-                    if purest_feature in features.columns:
-                        features = features.drop(purest_feature, axis=1)
+                    if purest_feature in features:
+                        new_features = {key: value for key, value in features.items() if key != purest_feature}
                     subtree_node = self.ID3(subset, features, depth - 1)
                     root.values[value] = subtree_node
             return root
         
         else:
-            purest_feature_values = dataset[purest_feature].unique()
+            purest_feature_values = features[purest_feature]
             for value in purest_feature_values:
                 # Add a new tree branch for every value
                 root.values[value] = None
@@ -126,9 +126,9 @@ class DecisionTree:
                     root.values[value] = Node(label=most_common_label)
                 else:
                     # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
-                    if purest_feature in features.columns:
-                        features = features.drop(purest_feature, axis=1)
-                    subtree_node = self.ID3(subset, features, depth - 1)
+                    if purest_feature in features:
+                        new_features = {key: value for key, value in features.items() if key != purest_feature}
+                    subtree_node = self.ID3(subset, new_features, depth - 1)
                     root.values[value] = subtree_node
             return root
     
@@ -194,14 +194,14 @@ class Node:
         self.median = median
 
 class BaggedTrees:    
-    def bagging(self, train_dataset, test_dataset, number_of_trees):
+    def bagging(self, train_dataset, test_dataset, features, number_of_trees):
         DT = DecisionTree()
         predictions = []
 
         # Construct the trees and store their predictions
         for _ in range(number_of_trees):
             random_sample = DT.dataset_sample(train_dataset)
-            tree = DT.ID3(random_sample, train_dataset.drop('label', axis=1), 20)
+            tree = DT.ID3(random_sample, features, 20)
             prediction = DT.predict(tree, test_dataset)
             predictions.append(prediction['label'].to_numpy())
         
@@ -238,7 +238,25 @@ def main():
                        'default','balance','housing', 'loan', 
                        'contact', 'day', 'month', 'duration', 
                        'campaign', 'pdays', 'previous', 'poutcome', 'label']
-    bank_features = bank_train_dataset.drop('label', axis=1)
+    bank_features = {'age': [], 
+                    'job': ['admin', 'unknown', 'unemployed', 'management', 
+                            'housemaid', 'entrepreneur', 'student', 'blue-collar', 
+                            'self-employed', 'retired', 'technician', 'services'], 
+                    'marital': ['married', 'divorced', 'single'], 
+                    'education': ['unknown', 'primary', 'secondary', 'tertiary'], 
+                    'default': ['yes', 'no'], 
+                    'balance': [], 
+                    'housing': ['yes', 'no'], 
+                    'loan': ['yes', 'no'], 
+                    'contact': ['unknown', 'telephone', 'cellular'], 
+                    'day': [], 
+                    'month': ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 
+                              'jul', 'aug', 'sep', 'oct', 'nov', 'dec'],
+                    'duration': [], 
+                    'campaign': [],
+                    'pdays': [], 
+                    'previous': [],
+                    'poutcome': ['unknown', 'other', 'failure', 'success']}
         # Upload testing dataset
     bank_test_dataset = pd.read_csv(bank_test_path, header=None)
     bank_test_dataset.columns = ['age','job','marital','education',
@@ -255,27 +273,31 @@ def main():
     # DT.print_tree(bank_stump)
     # print('The prediction error for this tree is', bank_error)
 
-    # # Vary the number of trees from 1 to 500, report how the training 
-    # # and test errors vary along with the tree number in a figure.
-    # bank_predicted_dataset = BT.bagging(bank_train_dataset, bank_predicted_dataset, 2)
-    # bank_bagging_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
-    # print('The prediction error for this tree is', bank_bagging_error)
+    # Vary the number of trees from 1 to 500, report how the training 
+    # and test errors vary along with the tree number in a figure.
+    bank_predicted_dataset = BT.bagging(bank_train_dataset, bank_predicted_dataset, bank_features, 1)
+    bank_bagging_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+    print('The prediction error for this tree is', bank_bagging_error)
 
 
-    tennis_train_path = os.path.join(script_directory, '..', 'Datasets', 'tennis', 'train.csv')
-     # Using tennis dataset
-        # Upload training dataset
-    tennis_train_dataset = pd.read_csv(tennis_train_path, header=None)
-    tennis_train_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
-        # Upload testing dataset
-    tennis_test_dataset = pd.read_csv(tennis_train_path, header=None)
-    tennis_test_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
-        # Create copy of testing dataset for predicting
-    tennis_predicted_dataset = pd.DataFrame(tennis_test_dataset)
-    tennis_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
-    tennis_predicted_dataset = BT.bagging(tennis_train_dataset, tennis_predicted_dataset, 10)
-    tennis_bagging_error = DT.prediction_error(tennis_test_dataset['label'].to_numpy(), tennis_predicted_dataset['label'].to_numpy())
-    print('The prediction error for this tree is', tennis_bagging_error)
+    # tennis_train_path = os.path.join(script_directory, '..', 'Datasets', 'tennis', 'train.csv')
+    #  # Using tennis dataset
+    #     # Upload training dataset
+    # tennis_train_dataset = pd.read_csv(tennis_train_path, header=None)
+    # tennis_train_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
+    # tennis_features = {'Outlook': ['Sunny', 'Overcast', 'Rain'], 
+    #                    'Temp': ['Hot', 'Medium', 'Cool'], 
+    #                    'Humidity': ['High', 'Normal', 'Low'], 
+    #                    'Wind': ['Strong', 'Weak']}
+    #     # Upload testing dataset
+    # tennis_test_dataset = pd.read_csv(tennis_train_path, header=None)
+    # tennis_test_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
+    #     # Create copy of testing dataset for predicting
+    # tennis_predicted_dataset = pd.DataFrame(tennis_test_dataset)
+    # tennis_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
+    # tennis_predicted_dataset = BT.bagging(tennis_train_dataset, tennis_predicted_dataset, tennis_features, 10)
+    # tennis_bagging_error = DT.prediction_error(tennis_test_dataset['label'].to_numpy(), tennis_predicted_dataset['label'].to_numpy())
+    # print('The prediction error for this tree is', tennis_bagging_error)
 
 
 if __name__ == "__main__":

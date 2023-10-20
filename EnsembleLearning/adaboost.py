@@ -84,7 +84,7 @@ class DecisionTree:
                 purest_feature = feature
         return purest_feature
     
-    def ID3_entropy(self, dataset, features, depth):
+    def ID3(self, dataset, features, depth):
         # All examples have the same label
         if len(dataset['label'].unique()) == 1:
             # Return a leaf node with that label
@@ -102,7 +102,7 @@ class DecisionTree:
         root.values = {}
 
         # Check if the purest feature is numerical. Split accordingly.
-        if pd.api.types.is_numeric_dtype(dataset[purest_feature]):
+        if not features[purest_feature]:
             # Convert to binary feature.
             median_value = dataset[purest_feature].median()
             root.median = median_value
@@ -124,14 +124,14 @@ class DecisionTree:
                     root.values[value] = Node(label=most_common_label)
                 else:
                     # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
-                    if purest_feature in features.columns:
-                        features = features.drop(purest_feature, axis=1)
-                    subtree_node = self.ID3_entropy(subset, features, depth - 1)
+                    if purest_feature in features:
+                        new_features = {key: value for key, value in features.items() if key != purest_feature}
+                    subtree_node = self.ID3(subset, features, depth - 1)
                     root.values[value] = subtree_node
             return root
         
         else:
-            purest_feature_values = dataset[purest_feature].unique()
+            purest_feature_values = features[purest_feature]
             for value in purest_feature_values:
                 # Add a new tree branch for every value
                 root.values[value] = None
@@ -146,9 +146,9 @@ class DecisionTree:
                     root.values[value] = Node(label=most_common_label)
                 else:
                     # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
-                    if purest_feature in features.columns:
-                        features = features.drop(purest_feature, axis=1)
-                    subtree_node = self.ID3_entropy(subset, features, depth - 1)
+                    if purest_feature in features:
+                        new_features = {key: value for key, value in features.items() if key != purest_feature}
+                    subtree_node = self.ID3(subset, new_features, depth - 1)
                     root.values[value] = subtree_node
             return root
     
@@ -224,7 +224,25 @@ def main():
                        'default','balance','housing', 'loan', 
                        'contact', 'day', 'month', 'duration', 
                        'campaign', 'pdays', 'previous', 'poutcome', 'label']
-    bank_features = bank_train_dataset.drop('label', axis=1)
+    bank_features = {'age': [], 
+                    'job': ['admin', 'unknown', 'unemployed', 'management', 
+                            'housemaid', 'entrepreneur', 'student', 'blue-collar', 
+                            'self-employed', 'retired', 'technician', 'services'], 
+                    'marital': ['married', 'divorced', 'single'], 
+                    'education': ['unknown', 'primary', 'secondary', 'tertiary'], 
+                    'default': ['yes', 'no'], 
+                    'balance': [], 
+                    'housing': ['yes', 'no'], 
+                    'loan': ['yes', 'no'], 
+                    'contact': ['unknown', 'telephone', 'cellular'], 
+                    'day': [], 
+                    'month': ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 
+                              'jul', 'aug', 'sep', 'oct', 'nov', 'dec'],
+                    'duration': [], 
+                    'campaign': [],
+                    'pdays': [], 
+                    'previous': [],
+                    'poutcome': ['unknown', 'other', 'failure', 'success']}
         # Upload testing dataset
     bank_test_dataset = pd.read_csv(bank_test_path, header=None)
     bank_test_dataset.columns = ['age','job','marital','education',
