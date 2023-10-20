@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
+import random
 
 class DecisionTree:
     def entropy(self, dataset):
@@ -157,6 +158,8 @@ class DecisionTree:
                 self._predict_label(subtree, dataset, row_index)
                 return
             
+        if feature_value not in tree.values:
+            feature_value = random.choice(list(tree.values.keys()))
         subtree = tree.values[feature_value]
         self._predict_label(subtree, dataset, row_index)
 
@@ -167,7 +170,7 @@ class DecisionTree:
                 counter = counter + 1
         return counter / len(actual_labels)
     
-    def dataset_sample(self, dataset, ratio=0.15):
+    def dataset_sample(self, dataset, ratio=0.5):
         random_indices = dataset.sample(frac=ratio, replace=True).index
         return dataset.loc[random_indices]
 
@@ -191,15 +194,31 @@ class Node:
         self.median = median
 
 class BaggedTrees:    
-    def bagging(self, dataset, number_of_trees):
+    def bagging(self, train_dataset, test_dataset, number_of_trees):
         DT = DecisionTree()
-        trees = []
+        predictions = []
+
+        # Construct the trees and store their predictions
         for _ in range(number_of_trees):
-            sample = DT.dataset_sample(dataset)
-            tree = DT.ID3(dataset, dataset.drop('label', axis=1), 20)
+            random_sample = DT.dataset_sample(train_dataset)
+            tree = DT.ID3(random_sample, train_dataset.drop('label', axis=1), 20)
+            prediction = DT.predict(tree, test_dataset)
+            predictions.append(prediction['label'].to_numpy())
+        
+        # Update all the rows with the predictions
+        for row_number in range(test_dataset.shape[0]):
+            label = self._predict_label(predictions, row_number)
+            test_dataset.loc[row_number, 'label'] = label
+        return test_dataset
     
-    def predict(self, trees):
-        pass
+    def _predict_label(self, predictions, row_index):
+        row_values = []
+
+        for item in predictions:
+            row_values.append(item[row_index])
+        
+        # Majority vote for classification or average for regression
+        return max(row_values, key=row_values.count)
 
 def main():
     # Get the directory of the script
@@ -229,12 +248,35 @@ def main():
         # Create copy of testing dataset for predicting
     bank_predicted_dataset = pd.DataFrame(bank_test_dataset)
     bank_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
-        # Construct the tree, predict and compare
-    bank_stump = DT.ID3(bank_train_dataset, bank_features, 1)
-    bank_predicted_dataset = DT.predict(bank_stump, bank_predicted_dataset)
-    bank_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
-    DT.print_tree(bank_stump)
-    print('The prediction error for this tree is', bank_error)
+    #     # Construct the tree, predict and compare
+    # bank_stump = DT.ID3(bank_train_dataset, bank_features, 1)
+    # bank_predicted_dataset = DT.predict(bank_stump, bank_predicted_dataset)
+    # bank_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+    # DT.print_tree(bank_stump)
+    # print('The prediction error for this tree is', bank_error)
+
+    # # Vary the number of trees from 1 to 500, report how the training 
+    # # and test errors vary along with the tree number in a figure.
+    # bank_predicted_dataset = BT.bagging(bank_train_dataset, bank_predicted_dataset, 2)
+    # bank_bagging_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+    # print('The prediction error for this tree is', bank_bagging_error)
+
+
+    tennis_train_path = os.path.join(script_directory, '..', 'Datasets', 'tennis', 'train.csv')
+     # Using tennis dataset
+        # Upload training dataset
+    tennis_train_dataset = pd.read_csv(tennis_train_path, header=None)
+    tennis_train_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
+        # Upload testing dataset
+    tennis_test_dataset = pd.read_csv(tennis_train_path, header=None)
+    tennis_test_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
+        # Create copy of testing dataset for predicting
+    tennis_predicted_dataset = pd.DataFrame(tennis_test_dataset)
+    tennis_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
+    tennis_predicted_dataset = BT.bagging(tennis_train_dataset, tennis_predicted_dataset, 10)
+    tennis_bagging_error = DT.prediction_error(tennis_test_dataset['label'].to_numpy(), tennis_predicted_dataset['label'].to_numpy())
+    print('The prediction error for this tree is', tennis_bagging_error)
+
 
 if __name__ == "__main__":
     main()
