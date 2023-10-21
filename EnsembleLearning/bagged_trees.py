@@ -42,9 +42,9 @@ class DecisionTree:
     def gain(self, feature, dataset, purity_measure):
         total_size = dataset.shape[0]
         weighted_average = 0
-        features = dataset[feature].unique()
+        feature_values = dataset[feature].unique()
         subset_purity = purity_measure(dataset)
-        for value in features:
+        for value in feature_values:
             # Create a subset of all rows that have the same feature value
             feature_value_subset = dataset[dataset[feature] == value]
             subset_size = feature_value_subset.shape[0]
