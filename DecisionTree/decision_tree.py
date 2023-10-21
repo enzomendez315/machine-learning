@@ -38,9 +38,10 @@ class DecisionTree:
             gini_index -= (subset_size / total_size) ** 2
         return gini_index
 
-    def gain(self, feature, dataset, features, purity_measure):
+    def gain(self, feature, dataset, purity_measure):
         total_size = dataset.shape[0]
         weighted_average = 0
+        features = dataset[feature].unique()
         subset_purity = purity_measure(dataset)
         for value in features:
             # Create a subset of all rows that have the same feature value
@@ -55,7 +56,7 @@ class DecisionTree:
         highest_gain = -1
         purest_feature = None
         for feature in features:
-            feature_gain = self.gain(feature, dataset, features, purity_measure)
+            feature_gain = self.gain(feature, dataset, purity_measure)
             if highest_gain < feature_gain:
                 highest_gain = feature_gain
                 purest_feature = feature

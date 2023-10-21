@@ -51,9 +51,7 @@ class DecisionTree:
             weighted_average += (subset_size / total_size) * feature_value_purity
         return subset_purity - weighted_average
 
-    def feature_for_split(self, dataset, purity_measure):
-        # Remove label column
-        features = dataset.drop('label', axis=1)
+    def feature_for_split(self, dataset, features, purity_measure):
         # Set to -1 for the case that gain = 0 for some feature
         highest_gain = -1
         purest_feature = None
@@ -77,7 +75,7 @@ class DecisionTree:
             return Node(label=label_count.idxmax())
 
         root = Node()
-        purest_feature = self.feature_for_split(dataset, self.entropy)
+        purest_feature = self.feature_for_split(dataset, features, self.entropy)
         root.feature = purest_feature
         root.values = {}
 
