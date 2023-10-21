@@ -130,36 +130,42 @@ class DecisionTree:
                     root.values[value] = subtree_node
             return root
     
-    def predict(self, tree, dataset):
-        for index, _ in dataset.iterrows():
-            self._predict_label(tree, dataset, index)
+    def predict(self, tree, dataset, feature_list):
+        features = dataset.drop('label', axis=1)
+        for index, row in features.iterrows():
+            row_values = dict(row)
+            predicted_label = self._predict_label(tree, row_values, feature_list)
+            # Insert label at the right location
+            dataset.at[index, 'label'] = predicted_label
         return dataset
     
-    def _predict_label(self, tree, dataset, row_index):
+    def _predict_label(self, tree, row_values, feature_list):
+        predicted_label = ''
+
         # Leaf node indicates there is a label
         if not tree.values:
-            dataset.at[row_index, 'label'] = tree.label
-            return
+            return tree.label
         
         # Get the feature value using the feature found in tree
-        feature_value = dataset.at[row_index, tree.feature]
+        feature_value = row_values[tree.feature]
 
         # Handle numerical values appropriately
-        if pd.api.types.is_numeric_dtype(dataset[tree.feature]):
+        if not feature_list[tree.feature]:
             median_value = tree.median
             if feature_value >= median_value:
                 subtree = tree.values['more than or equal to ' + str(median_value)]
-                self._predict_label(subtree, dataset, row_index)
-                return
+                predicted_label = self._predict_label(subtree, row_values, feature_list)
+                return predicted_label
             else:
                 subtree = tree.values['less than ' + str(median_value)]
-                self._predict_label(subtree, dataset, row_index)
-                return
+                predicted_label = self._predict_label(subtree, row_values, feature_list)
+                return predicted_label
             
         if feature_value not in tree.values:
             feature_value = random.choice(list(tree.values.keys()))
         subtree = tree.values[feature_value]
-        self._predict_label(subtree, dataset, row_index)
+        predicted_label = self._predict_label(subtree, row_values, feature_list)
+        return predicted_label
 
     def prediction_error(self, actual_labels, predicted_labels):
         counter = 0
@@ -222,7 +228,7 @@ def main():
     car_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
         # Construct the tree, predict and compare
     car_tree = DT.ID3(car_train_dataset, car_features, 3)
-    car_predicted_dataset = DT.predict(car_tree, car_predicted_dataset)
+    car_predicted_dataset = DT.predict(car_tree, car_predicted_dataset, car_features)
     car_error = DT.prediction_error(car_test_dataset['label'].to_numpy(), car_predicted_dataset['label'].to_numpy())
     DT.print_tree(car_tree)
     print('The prediction error for this tree is', car_error)
@@ -243,7 +249,7 @@ def main():
     tennis_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
         # Construct the tree, predict and compare
     tennis_tree = DT.ID3(tennis_train_dataset, tennis_features, 3)
-    tennis_predicted_dataset = DT.predict(tennis_tree, tennis_predicted_dataset)
+    tennis_predicted_dataset = DT.predict(tennis_tree, tennis_predicted_dataset, tennis_features)
     tennis_error = DT.prediction_error(tennis_test_dataset['label'].to_numpy(), tennis_predicted_dataset['label'].to_numpy())
     DT.print_tree(tennis_tree)
     print('The prediction error for this tree is', tennis_error)
@@ -285,7 +291,7 @@ def main():
     bank_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
         # Construct the tree, predict and compare
     bank_tree = DT.ID3(bank_train_dataset, bank_features, 3)
-    bank_predicted_dataset = DT.predict(bank_tree, bank_predicted_dataset)
+    bank_predicted_dataset = DT.predict(bank_tree, bank_predicted_dataset, bank_features)
     bank_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
     DT.print_tree(bank_tree)
     print('The prediction error for this tree is', bank_error)
