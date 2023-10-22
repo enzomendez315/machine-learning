@@ -84,7 +84,8 @@ class DecisionTree:
             # Convert to binary feature.
             median_value = dataset[purest_feature].median()
             root.median = median_value
-            purest_feature_values = {'more than or equal to ' + str(median_value), 'less than ' + str(median_value)}
+            purest_feature_values = {'more than or equal to ' + str(median_value), 
+                                     'less than ' + str(median_value)}
             for value in purest_feature_values:
                 # Add a new tree branch for every value
                 root.values[value] = None
@@ -199,7 +200,6 @@ class AdaBoost:
         total_rows = train_dataset.shape[0]
         classifiers = []
         alphas = []
-        training_errors = []
         predictions = []
         
         # Initialize weights
@@ -216,21 +216,29 @@ class AdaBoost:
             predicted_labels = prediction['label'].to_numpy()
 
             # Compute error
-            weighted_error = sum(training_weights * 
-                                 (np.not_equal(actual_labels, predicted_labels)).astype(int)
-                                 ) / sum(training_weights)  # np.sum(training_weights * (predicted_labels != actual_labels))
+            weighted_error = sum(training_weights * (np.not_equal(actual_labels, predicted_labels)).astype(int))
 
             # Compute alpha
             alpha = (1/2) * np.log((1 - weighted_error) / weighted_error)
             alphas.append(alpha)
 
             # Update weights
-            training_weights = training_weights * np.exp(-alpha * actual_labels * predicted_labels)
+            training_weights = training_weights * np.exp(alpha * (np.not_equal(actual_labels, predicted_labels)).astype(int))
+            training_weights = training_weights / sum(training_weights)
 
+        for row_number in range(test_dataset.shape[0]):
+            label = self._predict_label(predictions, row_number)
+            test_dataset.loc[row_number, 'label'] = label
         return test_dataset
 
-    def _predict_label(self, ):
-        pass
+    def _predict_label(self, predictions, row_index):
+        row_values = []
+
+        for item in predictions:
+            row_values.append(item[row_index])
+        
+        # Majority vote for classification or average for regression
+        return max(row_values, key=row_values.count)
 
 def main():
     # Get the directory of the script
