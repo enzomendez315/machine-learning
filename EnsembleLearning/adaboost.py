@@ -3,27 +3,6 @@ import numpy as np
 import pandas as pd
 import random
 
-def calculate_alpha(error):
-    return (1/2) * np.log((1 - error) / error)
-
-def update_weights(weight, alpha, prediction, target):
-    return weight * np.exp(alpha * target * prediction)
-    
-def adaboost(data, features, numerical_features, number_classifiers):
-    total_rows = data.shape[0]
-    
-    # Initialize weights
-    weights = np.full(total_rows, (1 / total_rows))
-    
-
-    classifiers = []
-    for i in range(number_classifiers):
-        DT = DecisionTree()
-        stump = DT.decision_stump(data, features, numerical_features)
-
-def predict(X):
-    pass
-
 class DecisionTree:
     def entropy(self, dataset):
         total_size = dataset.shape[0]
@@ -83,7 +62,7 @@ class DecisionTree:
                 purest_feature = feature
         return purest_feature
     
-    def ID3(self, dataset, features, depth):
+    def ID3(self, dataset, features, depth, training_weights):
         # All examples have the same label
         if len(dataset['label'].unique()) == 1:
             # Return a leaf node with that label
@@ -213,6 +192,45 @@ class Node:
         self.values = values    # values = {'value': Node}
         self.label = label
         self.median = median
+
+class AdaBoost:
+    def adaboost(self, train_dataset, test_dataset, features, number_classifiers):
+        DT = DecisionTree()
+        total_rows = train_dataset.shape[0]
+        classifiers = []
+        alphas = []
+        training_errors = []
+        predictions = []
+        
+        # Initialize weights
+        training_weights = np.full(total_rows, (1 / total_rows))
+
+        # Construct the stumps and store them
+        for _ in range(number_classifiers):
+            stump = DT.ID3(train_dataset, features, 1, training_weights)
+            prediction = DT.predict(stump, test_dataset, features)
+            classifiers.append(stump)
+            predictions.append(prediction)
+
+            actual_labels = test_dataset['label'].to_numpy()
+            predicted_labels = prediction['label'].to_numpy()
+
+            # Compute error
+            weighted_error = sum(training_weights * 
+                                 (np.not_equal(actual_labels, predicted_labels)).astype(int)
+                                 ) / sum(training_weights)  # np.sum(training_weights * (predicted_labels != actual_labels))
+
+            # Compute alpha
+            alpha = (1/2) * np.log((1 - weighted_error) / weighted_error)
+            alphas.append(alpha)
+
+            # Update weights
+            training_weights = training_weights * np.exp(-alpha * actual_labels * predicted_labels)
+
+        return test_dataset
+
+    def _predict_label(self, ):
+        pass
 
 def main():
     # Get the directory of the script
