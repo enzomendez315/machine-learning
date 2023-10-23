@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import random
+import matplotlib.pyplot as plt
 import time
 
 class DecisionTree:
@@ -283,19 +284,41 @@ def main():
     bank_predicted_dataset = pd.DataFrame(bank_test_dataset)
     bank_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
 
+    x_axis = list(range(1, 11))
+    training_errors = []
+    testing_errors = []
+
     # Vary the number of trees from 1 to 500, report how the training 
     # and test errors vary along with the tree number in a figure.
     for number_of_trees in range(1, 11):
         start_time = time.time()
-        bank_predicted_dataset = RF.random_forest(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees, 6)
+
+        bank_predicted_dataset = RF.random_forest(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees, 2)
         bank_training_error = DT.prediction_error(bank_train_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
         bank_testing_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+        training_errors.append(bank_training_error)
+        testing_errors.append(bank_testing_error)
+
+        # bank_predicted_dataset = RF.random_forest(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees, 4)
+        # bank_training_error = DT.prediction_error(bank_train_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+        # bank_testing_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+        # training_errors.append(bank_training_error)
+        # testing_errors.append(bank_testing_error)
+
+        # bank_predicted_dataset = RF.random_forest(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees, 6)
+        # bank_training_error = DT.prediction_error(bank_train_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+        # bank_testing_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+        # training_errors.append(bank_training_error)
+        # testing_errors.append(bank_testing_error)
+
         end_time=time.time()
         total_time = end_time - start_time
         print('Random forest using', number_of_trees, 'trees:')
-        print('Training error is', bank_training_error)
-        print('Testing error is', bank_testing_error)
         print('Took', total_time, 'seconds')
+
+    plt.plot(x_axis,training_errors, label='Training Errors', color='blue')
+    plt.plot(x_axis,testing_errors, label='Testing Errors', color='red')
+    plt.show()
 
 
     # tennis_train_path = os.path.join(script_directory, '..', 'Datasets', 'tennis', 'train.csv')
