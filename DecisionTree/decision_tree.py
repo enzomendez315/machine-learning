@@ -103,7 +103,7 @@ class DecisionTree:
                     # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
                     if purest_feature in features:
                         new_features = {key: value for key, value in features.items() if key != purest_feature}
-                    subtree_node = self.ID3(subset, features, depth - 1)
+                    subtree_node = self.ID3(subset, new_features, depth - 1)
                     root.values[value] = subtree_node
             return root
         
