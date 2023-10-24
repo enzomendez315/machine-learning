@@ -1,27 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
-
-def calculate_alpha(error):
-    return (1/2) * np.log((1 - error) / error)
-
-def update_weights(weight, alpha, prediction, target):
-    return weight * np.exp(alpha * target * prediction)
-    
-def adaboost(data, features, numerical_features, number_classifiers):
-    total_rows = data.shape[0]
-    
-    # Initialize weights
-    weights = np.full(total_rows, (1 / total_rows))
-    
-
-    classifiers = []
-    for i in range(number_classifiers):
-        DT = DecisionTree()
-        stump = DT.decision_stump(data, features, numerical_features)
-
-def predict(X):
-    pass
+import random
 
 class DecisionTree:
     def entropy(self, dataset):
@@ -61,9 +41,9 @@ class DecisionTree:
     def gain(self, feature, dataset, purity_measure):
         total_size = dataset.shape[0]
         weighted_average = 0
-        features = dataset[feature].unique()
+        feature_values = dataset[feature].unique()
         subset_purity = purity_measure(dataset)
-        for value in features:
+        for value in feature_values:
             # Create a subset of all rows that have the same feature value
             feature_value_subset = dataset[dataset[feature] == value]
             subset_size = feature_value_subset.shape[0]
@@ -71,9 +51,7 @@ class DecisionTree:
             weighted_average += (subset_size / total_size) * feature_value_purity
         return subset_purity - weighted_average
 
-    def feature_for_split(self, dataset, purity_measure):
-        # Remove label column
-        features = dataset.drop('label', axis=1)
+    def feature_for_split(self, dataset, features, purity_measure):
         # Set to -1 for the case that gain = 0 for some feature
         highest_gain = -1
         purest_feature = None
@@ -84,7 +62,7 @@ class DecisionTree:
                 purest_feature = feature
         return purest_feature
     
-    def ID3(self, dataset, features, depth):
+    def ID3(self, dataset, features, depth, training_weights):
         # All examples have the same label
         if len(dataset['label'].unique()) == 1:
             # Return a leaf node with that label
@@ -97,7 +75,7 @@ class DecisionTree:
             return Node(label=label_count.idxmax())
 
         root = Node()
-        purest_feature = self.feature_for_split(dataset, self.entropy)
+        purest_feature = self.feature_for_split(dataset, features, self.entropy)
         root.feature = purest_feature
         root.values = {}
 
@@ -106,7 +84,8 @@ class DecisionTree:
             # Convert to binary feature.
             median_value = dataset[purest_feature].median()
             root.median = median_value
-            purest_feature_values = {'more than or equal to ' + str(median_value), 'less than ' + str(median_value)}
+            purest_feature_values = {'more than or equal to ' + str(median_value), 
+                                     'less than ' + str(median_value)}
             for value in purest_feature_values:
                 # Add a new tree branch for every value
                 root.values[value] = None
@@ -152,34 +131,42 @@ class DecisionTree:
                     root.values[value] = subtree_node
             return root
     
-    def predict(self, tree, dataset):
-        for index, _ in dataset.iterrows():
-            self._predict_label(tree, dataset, index)
+    def predict(self, tree, dataset, feature_list):
+        features = dataset.drop('label', axis=1)
+        for index, row in features.iterrows():
+            row_values = dict(row)
+            predicted_label = self._predict_label(tree, row_values, feature_list)
+            # Insert label at the right location
+            dataset.at[index, 'label'] = predicted_label
         return dataset
     
-    def _predict_label(self, tree, dataset, row_index):
+    def _predict_label(self, tree, row_values, feature_list):
+        predicted_label = ''
+
         # Leaf node indicates there is a label
         if not tree.values:
-            dataset.at[row_index, 'label'] = tree.label
-            return
+            return tree.label
         
         # Get the feature value using the feature found in tree
-        feature_value = dataset.at[row_index, tree.feature]
+        feature_value = row_values[tree.feature]
 
         # Handle numerical values appropriately
-        if pd.api.types.is_numeric_dtype(dataset[tree.feature]):
+        if not feature_list[tree.feature]:
             median_value = tree.median
             if feature_value >= median_value:
                 subtree = tree.values['more than or equal to ' + str(median_value)]
-                self._predict_label(subtree, dataset, row_index)
-                return
+                predicted_label = self._predict_label(subtree, row_values, feature_list)
+                return predicted_label
             else:
                 subtree = tree.values['less than ' + str(median_value)]
-                self._predict_label(subtree, dataset, row_index)
-                return
+                predicted_label = self._predict_label(subtree, row_values, feature_list)
+                return predicted_label
             
+        if feature_value not in tree.values:
+            feature_value = random.choice(list(tree.values.keys()))
         subtree = tree.values[feature_value]
-        self._predict_label(subtree, dataset, row_index)
+        predicted_label = self._predict_label(subtree, row_values, feature_list)
+        return predicted_label
 
     def prediction_error(self, actual_labels, predicted_labels):
         counter = 0
@@ -206,6 +193,52 @@ class Node:
         self.values = values    # values = {'value': Node}
         self.label = label
         self.median = median
+
+class AdaBoost:
+    def adaboost(self, train_dataset, test_dataset, features, number_classifiers):
+        DT = DecisionTree()
+        total_rows = train_dataset.shape[0]
+        classifiers = []
+        alphas = []
+        predictions = []
+        
+        # Initialize weights
+        training_weights = np.full(total_rows, (1 / total_rows))
+
+        # Construct the stumps and store them
+        for _ in range(number_classifiers):
+            stump = DT.ID3(train_dataset, features, 1, training_weights)
+            prediction = DT.predict(stump, test_dataset, features)
+            classifiers.append(stump)
+            predictions.append(prediction)
+
+            actual_labels = test_dataset['label'].to_numpy()
+            predicted_labels = prediction['label'].to_numpy()
+
+            # Compute error
+            weighted_error = sum(training_weights * (np.not_equal(actual_labels, predicted_labels)).astype(int))
+
+            # Compute alpha
+            alpha = (1/2) * np.log((1 - weighted_error) / weighted_error)
+            alphas.append(alpha)
+
+            # Update weights
+            training_weights = training_weights * np.exp(alpha * (np.not_equal(actual_labels, predicted_labels)).astype(int))
+            training_weights = training_weights / sum(training_weights)
+
+        for row_number in range(test_dataset.shape[0]):
+            label = self._predict_label(predictions, row_number)
+            test_dataset.loc[row_number, 'label'] = label
+        return test_dataset
+
+    def _predict_label(self, predictions, row_index):
+        row_values = []
+
+        for item in predictions:
+            row_values.append(item[row_index])
+        
+        # Majority vote for classification or average for regression
+        return max(row_values, key=row_values.count)
 
 def main():
     # Get the directory of the script

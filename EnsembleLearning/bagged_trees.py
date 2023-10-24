@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import random
+import time
 
 class DecisionTree:
     def entropy(self, dataset):
@@ -41,9 +42,9 @@ class DecisionTree:
     def gain(self, feature, dataset, purity_measure):
         total_size = dataset.shape[0]
         weighted_average = 0
-        features = dataset[feature].unique()
+        feature_values = dataset[feature].unique()
         subset_purity = purity_measure(dataset)
-        for value in features:
+        for value in feature_values:
             # Create a subset of all rows that have the same feature value
             feature_value_subset = dataset[dataset[feature] == value]
             subset_size = feature_value_subset.shape[0]
@@ -51,9 +52,7 @@ class DecisionTree:
             weighted_average += (subset_size / total_size) * feature_value_purity
         return subset_purity - weighted_average
 
-    def feature_for_split(self, dataset, purity_measure):
-        # Remove label column
-        features = dataset.drop('label', axis=1)
+    def feature_for_split(self, dataset, features, purity_measure):
         # Set to -1 for the case that gain = 0 for some feature
         highest_gain = -1
         purest_feature = None
@@ -77,7 +76,7 @@ class DecisionTree:
             return Node(label=label_count.idxmax())
 
         root = Node()
-        purest_feature = self.feature_for_split(dataset, self.entropy)
+        purest_feature = self.feature_for_split(dataset, features, self.entropy)
         root.feature = purest_feature
         root.values = {}
 
@@ -132,36 +131,42 @@ class DecisionTree:
                     root.values[value] = subtree_node
             return root
     
-    def predict(self, tree, dataset):
-        for index, _ in dataset.iterrows():
-            self._predict_label(tree, dataset, index)
+    def predict(self, tree, dataset, feature_list):
+        features = dataset.drop('label', axis=1)
+        for index, row in features.iterrows():
+            row_values = dict(row)
+            predicted_label = self._predict_label(tree, row_values, feature_list)
+            # Insert label at the right location
+            dataset.at[index, 'label'] = predicted_label
         return dataset
     
-    def _predict_label(self, tree, dataset, row_index):
+    def _predict_label(self, tree, row_values, feature_list):
+        predicted_label = ''
+
         # Leaf node indicates there is a label
         if not tree.values:
-            dataset.at[row_index, 'label'] = tree.label
-            return
+            return tree.label
         
         # Get the feature value using the feature found in tree
-        feature_value = dataset.at[row_index, tree.feature]
+        feature_value = row_values[tree.feature]
 
         # Handle numerical values appropriately
-        if pd.api.types.is_numeric_dtype(dataset[tree.feature]):
+        if not feature_list[tree.feature]:
             median_value = tree.median
             if feature_value >= median_value:
                 subtree = tree.values['more than or equal to ' + str(median_value)]
-                self._predict_label(subtree, dataset, row_index)
-                return
+                predicted_label = self._predict_label(subtree, row_values, feature_list)
+                return predicted_label
             else:
                 subtree = tree.values['less than ' + str(median_value)]
-                self._predict_label(subtree, dataset, row_index)
-                return
-        
+                predicted_label = self._predict_label(subtree, row_values, feature_list)
+                return predicted_label
+            
         if feature_value not in tree.values:
             feature_value = random.choice(list(tree.values.keys()))
         subtree = tree.values[feature_value]
-        self._predict_label(subtree, dataset, row_index)
+        predicted_label = self._predict_label(subtree, row_values, feature_list)
+        return predicted_label
 
     def prediction_error(self, actual_labels, predicted_labels):
         counter = 0
@@ -202,7 +207,7 @@ class BaggedTrees:
         for _ in range(number_of_trees):
             random_sample = DT.dataset_sample(train_dataset)
             tree = DT.ID3(random_sample, features, 20)
-            prediction = DT.predict(tree, test_dataset)
+            prediction = DT.predict(tree, test_dataset, features)
             predictions.append(prediction['label'].to_numpy())
         
         # Update all the rows with the predictions
@@ -270,12 +275,16 @@ def main():
     # Vary the number of trees from 1 to 500, report how the training 
     # and test errors vary along with the tree number in a figure.
     for number_of_trees in range(1, 11):
+        start_time = time.time()
         bank_predicted_dataset = BT.bagging(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees)
         bank_training_error = DT.prediction_error(bank_train_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
         bank_testing_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+        end_time=time.time()
+        total_time = end_time - start_time
         print('Bagging using', number_of_trees, 'trees:')
         print('Training error is', bank_training_error)
         print('Testing error is', bank_testing_error)
+        print('Took', total_time, 'seconds')
 
 
     # tennis_train_path = os.path.join(script_directory, '..', 'Datasets', 'tennis', 'train.csv')
