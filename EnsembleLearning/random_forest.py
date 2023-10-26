@@ -70,11 +70,14 @@ class DecisionTree:
         # Limit the number of features
         if len(features) > number_of_features:
             features_to_remove = random.sample(list(features.keys()), len(features) - number_of_features)
-            features = {key: value for key, value in features.items() if key not in features_to_remove}
+            new_features = {key: value for key, value in features.items() if key not in features_to_remove}
+        else:
+            new_features = features
         
         # Remove features from dataset
-        for feature in features_to_remove:
-            dataset = dataset.drop(feature, axis=1)
+        temp_dataset = pd.DataFrame(dataset)
+        while features_to_remove:
+            temp_dataset = temp_dataset.drop(features_to_remove.pop(), axis=1)
         
         # All examples have the same label
         if len(dataset['label'].unique()) == 1:
@@ -88,7 +91,7 @@ class DecisionTree:
             return Node(label=label_count.idxmax())
 
         root = Node()
-        purest_feature = self.feature_for_split(dataset, features, self.entropy)
+        purest_feature = self.feature_for_split(temp_dataset, new_features, self.entropy)
         root.feature = purest_feature
         root.values = {}
 
@@ -248,99 +251,99 @@ def main():
     DT = DecisionTree()
     RF = RandomForest()
 
-    # Using bank dataset
-        # Upload training dataset
-    bank_train_dataset = pd.read_csv(bank_train_path, header=None)
-    bank_train_dataset.columns = ['age','job','marital','education',
-                                'default','balance','housing', 'loan', 
-                                'contact', 'day', 'month', 'duration', 
-                                'campaign', 'pdays', 'previous', 'poutcome', 'label']
-    bank_features = {'age': [], 
-                    'job': ['admin', 'unknown', 'unemployed', 'management', 
-                            'housemaid', 'entrepreneur', 'student', 'blue-collar', 
-                            'self-employed', 'retired', 'technician', 'services'], 
-                    'marital': ['married', 'divorced', 'single'], 
-                    'education': ['unknown', 'primary', 'secondary', 'tertiary'], 
-                    'default': ['yes', 'no'], 
-                    'balance': [], 
-                    'housing': ['yes', 'no'], 
-                    'loan': ['yes', 'no'], 
-                    'contact': ['unknown', 'telephone', 'cellular'], 
-                    'day': [], 
-                    'month': ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 
-                              'jul', 'aug', 'sep', 'oct', 'nov', 'dec'],
-                    'duration': [], 
-                    'campaign': [],
-                    'pdays': [], 
-                    'previous': [],
-                    'poutcome': ['unknown', 'other', 'failure', 'success']}
-        # Upload testing dataset
-    bank_test_dataset = pd.read_csv(bank_test_path, header=None)
-    bank_test_dataset.columns = ['age','job','marital','education',
-                                'default','balance','housing', 'loan', 
-                                'contact', 'day', 'month', 'duration', 
-                                'campaign', 'pdays', 'previous', 'poutcome', 'label']
-        # Create copy of testing dataset for predicting
-    bank_predicted_dataset = pd.DataFrame(bank_test_dataset)
-    bank_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
-
-    x_axis = list(range(1, 11))
-    training_errors = []
-    testing_errors = []
-
-    # Vary the number of trees from 1 to 500, report how the training 
-    # and test errors vary along with the tree number in a figure.
-    for number_of_trees in range(1, 11):
-        start_time = time.time()
-
-        bank_predicted_dataset = RF.random_forest(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees, 2)
-        bank_training_error = DT.prediction_error(bank_train_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
-        bank_testing_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
-        training_errors.append(bank_training_error)
-        testing_errors.append(bank_testing_error)
-
-        # bank_predicted_dataset = RF.random_forest(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees, 4)
-        # bank_training_error = DT.prediction_error(bank_train_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
-        # bank_testing_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
-        # training_errors.append(bank_training_error)
-        # testing_errors.append(bank_testing_error)
-
-        # bank_predicted_dataset = RF.random_forest(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees, 6)
-        # bank_training_error = DT.prediction_error(bank_train_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
-        # bank_testing_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
-        # training_errors.append(bank_training_error)
-        # testing_errors.append(bank_testing_error)
-
-        end_time=time.time()
-        total_time = end_time - start_time
-        print('Random forest using', number_of_trees, 'trees:')
-        print('Took', total_time, 'seconds')
-
-    plt.plot(x_axis,training_errors, label='Training Errors', color='blue')
-    plt.plot(x_axis,testing_errors, label='Testing Errors', color='red')
-    plt.show()
-
-
-    # tennis_train_path = os.path.join(script_directory, '..', 'Datasets', 'tennis', 'train.csv')
-    #  # Using tennis dataset
+    # # Using bank dataset
     #     # Upload training dataset
-    # tennis_train_dataset = pd.read_csv(tennis_train_path, header=None)
-    # tennis_train_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
-    # tennis_features = {'Outlook': ['Sunny', 'Overcast', 'Rain'], 
-    #                    'Temp': ['Hot', 'Medium', 'Cool'], 
-    #                    'Humidity': ['High', 'Normal', 'Low'], 
-    #                    'Wind': ['Strong', 'Weak']}
+    # bank_train_dataset = pd.read_csv(bank_train_path, header=None)
+    # bank_train_dataset.columns = ['age','job','marital','education',
+    #                             'default','balance','housing', 'loan', 
+    #                             'contact', 'day', 'month', 'duration', 
+    #                             'campaign', 'pdays', 'previous', 'poutcome', 'label']
+    # bank_features = {'age': [], 
+    #                 'job': ['admin', 'unknown', 'unemployed', 'management', 
+    #                         'housemaid', 'entrepreneur', 'student', 'blue-collar', 
+    #                         'self-employed', 'retired', 'technician', 'services'], 
+    #                 'marital': ['married', 'divorced', 'single'], 
+    #                 'education': ['unknown', 'primary', 'secondary', 'tertiary'], 
+    #                 'default': ['yes', 'no'], 
+    #                 'balance': [], 
+    #                 'housing': ['yes', 'no'], 
+    #                 'loan': ['yes', 'no'], 
+    #                 'contact': ['unknown', 'telephone', 'cellular'], 
+    #                 'day': [], 
+    #                 'month': ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 
+    #                           'jul', 'aug', 'sep', 'oct', 'nov', 'dec'],
+    #                 'duration': [], 
+    #                 'campaign': [],
+    #                 'pdays': [], 
+    #                 'previous': [],
+    #                 'poutcome': ['unknown', 'other', 'failure', 'success']}
     #     # Upload testing dataset
-    # tennis_test_dataset = pd.read_csv(tennis_train_path, header=None)
-    # tennis_test_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
+    # bank_test_dataset = pd.read_csv(bank_test_path, header=None)
+    # bank_test_dataset.columns = ['age','job','marital','education',
+    #                             'default','balance','housing', 'loan', 
+    #                             'contact', 'day', 'month', 'duration', 
+    #                             'campaign', 'pdays', 'previous', 'poutcome', 'label']
     #     # Create copy of testing dataset for predicting
-    # tennis_predicted_dataset = pd.DataFrame(tennis_test_dataset)
-    # tennis_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
-    # # tennis_tree = DT.ID3(tennis_train_dataset, tennis_features, 5, 6)
-    # # tennis_predicted_dataset = DT.predict(tennis_tree, tennis_predicted_dataset, tennis_features)
-    # # tennis_error = DT.prediction_error(tennis_test_dataset['label'].to_numpy(), tennis_predicted_dataset['label'].to_numpy())
-    # # DT.print_tree(tennis_tree)
-    # # print('The prediction error for this tree is', tennis_error)
+    # bank_predicted_dataset = pd.DataFrame(bank_test_dataset)
+    # bank_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
+
+    # x_axis = list(range(1, 11))
+    # training_errors = []
+    # testing_errors = []
+
+    # # Vary the number of trees from 1 to 500, report how the training 
+    # # and test errors vary along with the tree number in a figure.
+    # for number_of_trees in range(1, 11):
+    #     start_time = time.time()
+
+    #     bank_predicted_dataset = RF.random_forest(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees, 2)
+    #     bank_training_error = DT.prediction_error(bank_train_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+    #     bank_testing_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+    #     training_errors.append(bank_training_error)
+    #     testing_errors.append(bank_testing_error)
+
+    #     # bank_predicted_dataset = RF.random_forest(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees, 4)
+    #     # bank_training_error = DT.prediction_error(bank_train_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+    #     # bank_testing_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+    #     # training_errors.append(bank_training_error)
+    #     # testing_errors.append(bank_testing_error)
+
+    #     # bank_predicted_dataset = RF.random_forest(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees, 6)
+    #     # bank_training_error = DT.prediction_error(bank_train_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+    #     # bank_testing_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+    #     # training_errors.append(bank_training_error)
+    #     # testing_errors.append(bank_testing_error)
+
+    #     end_time=time.time()
+    #     total_time = end_time - start_time
+    #     print('Random forest using', number_of_trees, 'trees:')
+    #     print('Took', total_time, 'seconds')
+
+    # plt.plot(x_axis,training_errors, label='Training Errors', color='blue')
+    # plt.plot(x_axis,testing_errors, label='Testing Errors', color='red')
+    # plt.show()
+
+
+    tennis_train_path = os.path.join(script_directory, '..', 'Datasets', 'tennis', 'train.csv')
+     # Using tennis dataset
+        # Upload training dataset
+    tennis_train_dataset = pd.read_csv(tennis_train_path, header=None)
+    tennis_train_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
+    tennis_features = {'Outlook': ['Sunny', 'Overcast', 'Rain'], 
+                       'Temp': ['Hot', 'Medium', 'Cool'], 
+                       'Humidity': ['High', 'Normal', 'Low'], 
+                       'Wind': ['Strong', 'Weak']}
+        # Upload testing dataset
+    tennis_test_dataset = pd.read_csv(tennis_train_path, header=None)
+    tennis_test_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
+        # Create copy of testing dataset for predicting
+    tennis_predicted_dataset = pd.DataFrame(tennis_test_dataset)
+    tennis_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
+    tennis_tree = DT.ID3(tennis_train_dataset, tennis_features, 4, 6)
+    tennis_predicted_dataset = DT.predict(tennis_tree, tennis_predicted_dataset, tennis_features)
+    tennis_error = DT.prediction_error(tennis_test_dataset['label'].to_numpy(), tennis_predicted_dataset['label'].to_numpy())
+    DT.print_tree(tennis_tree)
+    print('The prediction error for this tree is', tennis_error)
     # tennis_predicted_dataset = RF.random_forest(tennis_train_dataset, tennis_predicted_dataset, tennis_features, 500, 4)
     # tennis_bagging_error = DT.prediction_error(tennis_test_dataset['label'].to_numpy(), tennis_predicted_dataset['label'].to_numpy())
     # print('The prediction error for this tree is', tennis_bagging_error)
