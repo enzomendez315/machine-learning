@@ -221,7 +221,7 @@ class RandomForest:
         # Construct the trees and store their predictions
         for _ in range(number_of_trees):
             random_sample = DT.dataset_sample(train_dataset)
-            tree = DT.ID3(random_sample, features, 20, number_of_features)
+            tree = DT.ID3(random_sample, features, number_of_features, 20)
             prediction = DT.predict(tree, test_dataset, features)
             predictions.append(prediction['label'].to_numpy())
         
@@ -296,7 +296,7 @@ def main():
     for number_of_trees in range(1, 501):
         start_time = time.time()
 
-        bank_predicted_dataset = RF.random_forest(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees, 2)
+        bank_predicted_dataset = RF.random_forest(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees, 4)
         bank_training_error = DT.prediction_error(bank_train_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
         bank_testing_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
         training_errors.append(bank_training_error)
