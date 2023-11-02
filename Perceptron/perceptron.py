@@ -3,59 +3,45 @@ import numpy as np
 import pandas as pd
 
 class Perceptron:
-    def predict_row(row, weights):
+    def train_standard(self, train_dataset, epochs, learning_rate):
+        # Initialize weights
+        weights = [0.0 for i in range(len(train_dataset.shape[0]))]
+        for epoch in range(epochs):
+            for index, dataset_row in train_dataset.iterrows():
+                row = dataset_row.tolist()
+                prediction = self.predict_row(row, weights)
+                if row[-1] != prediction:
+                    pass
+
+
+    def predict_row(self, row, weights):
+        # The bias is the first element of weights vector
         activation = weights[0]
-        # From 0 to number of input features - 1
         for i in range(len(row) - 1):
-            # Compute dot product
+            # Compute the dot product for the rest of the elements
             activation = activation + weights[i + 1] * row[i]
         if activation >= 0.0:
             return 1
         else:
-            return -1
+            return 0
         
 def main():
     # Get the directory of the script
     script_directory = os.path.dirname(os.path.abspath(__file__))
 
     # Construct the full path to the CSV files
-    bank_train_path = os.path.join(script_directory, '..', 'Datasets', 'bank-4', 'train.csv')
-    bank_test_path = os.path.join(script_directory, '..', 'Datasets', 'bank-4', 'test.csv')
+    bank_train_path = os.path.join(script_directory, '..', 'Datasets', 'bank-note', 'train.csv')
+    bank_test_path = os.path.join(script_directory, '..', 'Datasets', 'bank-note', 'test.csv')
 
     perceptron = Perceptron()
 
     # Using bank dataset
         # Upload training dataset
     bank_train_dataset = pd.read_csv(bank_train_path, header=None)
-    bank_train_dataset.columns = ['age','job','marital','education',
-                                'default','balance','housing', 'loan', 
-                                'contact', 'day', 'month', 'duration', 
-                                'campaign', 'pdays', 'previous', 'poutcome', 'label']
-    bank_features = {'age': [], 
-                    'job': ['admin', 'unknown', 'unemployed', 'management', 
-                            'housemaid', 'entrepreneur', 'student', 'blue-collar', 
-                            'self-employed', 'retired', 'technician', 'services'], 
-                    'marital': ['married', 'divorced', 'single'], 
-                    'education': ['unknown', 'primary', 'secondary', 'tertiary'], 
-                    'default': ['yes', 'no'], 
-                    'balance': [], 
-                    'housing': ['yes', 'no'], 
-                    'loan': ['yes', 'no'], 
-                    'contact': ['unknown', 'telephone', 'cellular'], 
-                    'day': [], 
-                    'month': ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 
-                              'jul', 'aug', 'sep', 'oct', 'nov', 'dec'],
-                    'duration': [], 
-                    'campaign': [],
-                    'pdays': [], 
-                    'previous': [],
-                    'poutcome': ['unknown', 'other', 'failure', 'success']}
+    bank_train_dataset.columns = ['variance', 'skewness', 'curtosis', 'entropy', 'label']
         # Upload testing dataset
     bank_test_dataset = pd.read_csv(bank_test_path, header=None)
-    bank_test_dataset.columns = ['age','job','marital','education',
-                                'default','balance','housing', 'loan', 
-                                'contact', 'day', 'month', 'duration', 
-                                'campaign', 'pdays', 'previous', 'poutcome', 'label']
+    bank_test_dataset.columns = ['variance', 'skewness', 'curtosis', 'entropy', 'label']
         # Create copy of testing dataset for predicting
     bank_predicted_dataset = pd.DataFrame(bank_test_dataset)
     bank_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
