@@ -7,19 +7,21 @@ class Perceptron:
         # Initialize weights
         weights = [0.0 for i in range(len(train_dataset.shape[0]))]
         for epoch in range(epochs):
+            train_dataset = train_dataset.sample(frac=1.0)
             for index, dataset_row in train_dataset.iterrows():
                 row = dataset_row.tolist()
                 prediction = self.predict_row(row, weights)
                 if row[-1] != prediction:
-                    pass
+                    for i in range(len(row) - 1):
+                        weights[i+1] = weights[i+1] + learning_rate * prediction * row[i]
 
 
     def predict_row(self, row, weights):
         # The bias is the first element of weights vector
         activation = weights[0]
-        for i in range(len(row) - 1):
+        for i in range(len(row)-1):
             # Compute the dot product for the rest of the elements
-            activation = activation + weights[i + 1] * row[i]
+            activation = activation + weights[i+1] * row[i]
         if activation >= 0.0:
             return 1
         else:
