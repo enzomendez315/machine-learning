@@ -44,7 +44,7 @@ class Perceptron:
                     vote_count += 1
         return weight_vectors
     
-    def train_average(self, train_dataset, epochs, learning_rate):
+    def train_averaged(self, train_dataset, epochs, learning_rate):
         # Initialize weights
         weights = [0 for i in range(len(train_dataset.shape[0]))]
         average = [0 for i in range(len(train_dataset.shape[0]))]
@@ -60,9 +60,9 @@ class Perceptron:
                         # Update weights
                         weights[i+1] = weights[i+1] + learning_rate * actual_label * row[i]
                 else:
-                    pass
-        return weights
-
+                    for i in range(weights):
+                        average[i] += weights[i]
+        return average
 
     def predict_row(self, row, weights):
         # The bias is the first element of weights vector
@@ -74,6 +74,15 @@ class Perceptron:
             return 1
         else:
             return -1
+        
+    def predict_standard(self, dataset, weights):
+        pass
+
+    def predict_voted(self, dataset, weights):
+        pass
+
+    def predict_averaged(self, dataset, weights):
+        pass
         
 def main():
     # Get the directory of the script
