@@ -1,19 +1,67 @@
 import os
 import numpy as np
 import pandas as pd
+from copy import deepcopy
 
 class Perceptron:
     def train_standard(self, train_dataset, epochs, learning_rate):
         # Initialize weights
-        weights = [0.0 for i in range(len(train_dataset.shape[0]))]
+        weights = [0 for i in range(len(train_dataset.shape[0]))]
         for epoch in range(epochs):
+            # Shuffle the data
             train_dataset = train_dataset.sample(frac=1.0)
             for index, dataset_row in train_dataset.iterrows():
                 row = dataset_row.tolist()
                 prediction = self.predict_row(row, weights)
-                if row[-1] != prediction:
+                actual_label = row[-1]
+                if prediction != actual_label:
                     for i in range(len(row) - 1):
-                        weights[i+1] = weights[i+1] + learning_rate * prediction * row[i]
+                        # Update weights
+                        weights[i+1] = weights[i+1] + learning_rate * actual_label * row[i]
+        return weights
+    
+    def train_voted(self, train_dataset, epochs, learning_rate):
+        # Initialize weights
+        weights = [0 for i in range(len(train_dataset.shape[0]))]
+        weight_vectors = []
+        votes = []
+        vote_count = 0
+        for epoch in range(epochs):
+            # Shuffle the data
+            train_dataset = train_dataset.sample(frac=1.0)
+            for index, dataset_row in train_dataset.iterrows():
+                row = dataset_row.tolist()
+                prediction = self.predict_row(row, weights)
+                actual_label = row[-1]
+                if prediction != actual_label:
+                    for i in range(len(row) - 1):
+                        # Add weight vector
+                        weight_vectors.append(tuple(deepcopy(weights), vote_count))
+                        # Create new weight vector
+                        weights[i+1] = weights[i+1] + learning_rate * actual_label * row[i]
+                        vote_count = 1
+                else:
+                    vote_count += 1
+        return weight_vectors
+    
+    def train_average(self, train_dataset, epochs, learning_rate):
+        # Initialize weights
+        weights = [0 for i in range(len(train_dataset.shape[0]))]
+        average = [0 for i in range(len(train_dataset.shape[0]))]
+        for epoch in range(epochs):
+            # Shuffle the data
+            train_dataset = train_dataset.sample(frac=1.0)
+            for index, dataset_row in train_dataset.iterrows():
+                row = dataset_row.tolist()
+                prediction = self.predict_row(row, weights)
+                actual_label = row[-1]
+                if prediction != actual_label:
+                    for i in range(len(row) - 1):
+                        # Update weights
+                        weights[i+1] = weights[i+1] + learning_rate * actual_label * row[i]
+                else:
+                    pass
+        return weights
 
 
     def predict_row(self, row, weights):
@@ -25,7 +73,7 @@ class Perceptron:
         if activation >= 0.0:
             return 1
         else:
-            return 0
+            return -1
         
 def main():
     # Get the directory of the script
