@@ -6,7 +6,7 @@ from copy import deepcopy
 class Perceptron:
     def train_standard(self, train_dataset, epochs, learning_rate):
         # Initialize weights
-        weights = [0 for i in range(len(train_dataset.shape[0]))]
+        weights = [0 for i in range(train_dataset.shape[0])]
         for epoch in range(epochs):
             # Shuffle the data
             train_dataset = train_dataset.sample(frac=1.0)
@@ -22,7 +22,7 @@ class Perceptron:
     
     def train_voted(self, train_dataset, epochs, learning_rate):
         # Initialize weights
-        weights = [0 for i in range(len(train_dataset.shape[0]))]
+        weights = [0 for i in range(train_dataset.shape[0])]
         weight_vectors = []
         votes = []
         vote_count = 0
@@ -47,8 +47,8 @@ class Perceptron:
     
     def train_averaged(self, train_dataset, epochs, learning_rate):
         # Initialize weights
-        weights = [0 for i in range(len(train_dataset.shape[0]))]
-        average = [0 for i in range(len(train_dataset.shape[0]))]
+        weights = [0 for i in range(train_dataset.shape[0])]
+        averages = [0 for i in range(train_dataset.shape[0])]
         for epoch in range(epochs):
             # Shuffle the data
             train_dataset = train_dataset.sample(frac=1.0)
@@ -62,8 +62,8 @@ class Perceptron:
                         weights[i+1] = weights[i+1] + learning_rate * actual_label * row[i]
                 else:
                     for i in range(weights):
-                        average[i] += weights[i]
-        return average
+                        averages[i] += weights[i]
+        return averages
 
     def _predict_row(self, row, weights):
         # The bias is the first element of weights vector
@@ -106,7 +106,14 @@ class Perceptron:
         return dataset
 
     def predict_averaged(self, dataset, weights):
-        pass
+        for index, dataset_row in dataset.iterrows():
+            row = dataset_row.tolist()
+            prediction = self._predict_row(row, weights)
+            if prediction >= 0.0:
+                dataset.at[index, 'label'] = 1
+            else:
+                dataset.at[index, 'label'] = 0
+        return dataset
         
 def main():
     # Get the directory of the script
@@ -128,6 +135,11 @@ def main():
         # Create copy of testing dataset for predicting
     bank_predicted_dataset = pd.DataFrame(bank_test_dataset)
     bank_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
+
+    standard_weights = perceptron.train_standard(bank_train_dataset, 10, 0.5)
+    bank_predicted_dataset = perceptron.predict_standard(bank_predicted_dataset, standard_weights)
+
+    print(standard_weights)
 
     # tennis_train_path = os.path.join(script_directory, '..', 'Datasets', 'tennis', 'train.csv')
     #  # Using tennis dataset
