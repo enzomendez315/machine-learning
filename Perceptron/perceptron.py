@@ -12,7 +12,7 @@ class Perceptron:
             train_dataset = train_dataset.sample(frac=1.0)
             for index, dataset_row in train_dataset.iterrows():
                 row = dataset_row.tolist()
-                prediction = self.predict_row(row, weights)
+                prediction = self._predict_row(row, weights)
                 actual_label = row[-1]
                 if prediction != actual_label:
                     for i in range(len(row) - 1):
@@ -31,18 +31,19 @@ class Perceptron:
             train_dataset = train_dataset.sample(frac=1.0)
             for index, dataset_row in train_dataset.iterrows():
                 row = dataset_row.tolist()
-                prediction = self.predict_row(row, weights)
+                prediction = self._predict_row(row, weights)
                 actual_label = row[-1]
                 if prediction != actual_label:
                     for i in range(len(row) - 1):
-                        # Add weight vector
-                        weight_vectors.append(tuple(deepcopy(weights), vote_count))
+                        # Add weight vector and its vote
+                        weight_vectors.append(deepcopy(weights))
+                        votes.append(vote_count)
                         # Create new weight vector
                         weights[i+1] = weights[i+1] + learning_rate * actual_label * row[i]
                         vote_count = 1
                 else:
                     vote_count += 1
-        return weight_vectors
+        return weight_vectors, votes
     
     def train_averaged(self, train_dataset, epochs, learning_rate):
         # Initialize weights
@@ -53,7 +54,7 @@ class Perceptron:
             train_dataset = train_dataset.sample(frac=1.0)
             for index, dataset_row in train_dataset.iterrows():
                 row = dataset_row.tolist()
-                prediction = self.predict_row(row, weights)
+                prediction = self._predict_row(row, weights)
                 actual_label = row[-1]
                 if prediction != actual_label:
                     for i in range(len(row) - 1):
@@ -64,10 +65,10 @@ class Perceptron:
                         average[i] += weights[i]
         return average
 
-    def predict_row(self, row, weights):
+    def _predict_row(self, row, weights):
         # The bias is the first element of weights vector
         activation = weights[0]
-        for i in range(len(row)-1):
+        for i in range(len(row) - 1):
             # Compute the dot product for the rest of the elements
             activation = activation + weights[i+1] * row[i]
         if activation >= 0.0:
@@ -76,10 +77,33 @@ class Perceptron:
             return -1
         
     def predict_standard(self, dataset, weights):
-        pass
+        for index, dataset_row in dataset.iterrows():
+            row = dataset_row.tolist()
+            prediction = self._predict_row(row, weights)
+            if prediction >= 0.0:
+                dataset.at[index, 'label'] = 1
+            else:
+                dataset.at[index, 'label'] = 0
+        return dataset
 
-    def predict_voted(self, dataset, weights):
-        pass
+    def predict_voted(self, dataset, weights, votes):
+        for index, dataset_row in dataset.iterrows():
+            row = dataset_row.tolist()
+            voted_prediction = 0
+            for i in range(len(weights)):
+                prediction = 0
+                for current_feature in range(len(row) - 1):
+                    prediction = prediction + weights[i] * row[current_feature]
+                if prediction >= 0.0:
+                    prediction = 1
+                else:
+                    prediction = -1
+                voted_prediction += votes[i] * prediction
+            if voted_prediction >= 0.0:
+                dataset.at[index, 'label'] = 1
+            else:
+                dataset.at[index, 'label'] = 0
+        return dataset
 
     def predict_averaged(self, dataset, weights):
         pass
