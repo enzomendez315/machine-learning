@@ -13,6 +13,7 @@ class Perceptron:
             for index, dataset_row in train_dataset.iterrows():
                 row = dataset_row.tolist()
                 prediction = self._predict_row(row, weights)
+                # Set the correct label for calculation
                 if row[-1] == 0.0:
                     actual_label = -1.0
                 else:
@@ -36,8 +37,13 @@ class Perceptron:
             for index, dataset_row in train_dataset.iterrows():
                 row = dataset_row.tolist()
                 prediction = self._predict_row(row, weights)
-                actual_label = row[-1]
+                # Set the correct label for calculation
+                if row[-1] == 0.0:
+                    actual_label = -1.0
+                else:
+                    actual_label = 1.0
                 if prediction != actual_label:
+                    weights[0] += learning_rate * actual_label
                     for i in range(len(row) - 1):
                         # Add weight vector and its vote
                         weight_vectors.append(deepcopy(weights))
@@ -51,21 +57,26 @@ class Perceptron:
     
     def train_averaged(self, train_dataset, epochs, learning_rate):
         # Initialize weights. Bias is the first element
-        weights = [0 for i in range(len(train_dataset.columns))]
-        averages = [0 for i in range(len(train_dataset.columns))]
+        weights = [0.0 for i in range(len(train_dataset.columns))]
+        averages = [0.0 for i in range(len(train_dataset.columns))]
         for epoch in range(epochs):
             # Shuffle the data
             train_dataset = train_dataset.sample(frac=1.0)
             for index, dataset_row in train_dataset.iterrows():
                 row = dataset_row.tolist()
                 prediction = self._predict_row(row, weights)
-                actual_label = row[-1]
+                # Set the correct label for calculation
+                if row[-1] == 0.0:
+                    actual_label = -1.0
+                else:
+                    actual_label = 1.0
                 if prediction != actual_label:
+                    weights[0] += learning_rate * actual_label
                     for i in range(len(row) - 1):
                         # Update weights
                         weights[i+1] = weights[i+1] + learning_rate * actual_label * row[i]
                 else:
-                    for i in range(weights):
+                    for i in range(len(weights)):
                         averages[i] += weights[i]
         return averages
 
@@ -96,8 +107,8 @@ class Perceptron:
             voted_prediction = 0
             for i in range(len(weights)):
                 prediction = 0
-                for current_feature in range(len(row) - 1):
-                    prediction = prediction + weights[i] * row[current_feature]
+                for j in range(len(row) - 1):
+                    prediction = prediction + weights[i][j+1] * row[j]
                 if prediction >= 0.0:
                     prediction = 1
                 else:
@@ -138,42 +149,40 @@ def main():
 
     # Using bank dataset
         # Upload training dataset
-    bank_train_dataset = pd.read_csv(bank_train_path, header=None)
-    bank_train_dataset.columns = ['variance', 'skewness', 'curtosis', 'entropy', 'label']
+    train_dataset = pd.read_csv(bank_train_path, header=None)
+    train_dataset.columns = ['variance', 'skewness', 'curtosis', 'entropy', 'label']
         # Upload testing dataset
-    bank_test_dataset = pd.read_csv(bank_test_path, header=None)
-    bank_test_dataset.columns = ['variance', 'skewness', 'curtosis', 'entropy', 'label']
-        # Create copy of testing dataset for predicting
-    bank_predicted_dataset = pd.DataFrame(bank_test_dataset)
-    bank_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
+    test_dataset = pd.read_csv(bank_test_path, header=None)
+    test_dataset.columns = ['variance', 'skewness', 'curtosis', 'entropy', 'label']
+        # Create copies of testing dataset for predicting
+    standard_predicted_dataset = pd.DataFrame(test_dataset)
+    standard_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
+    voted_predicted_dataset = pd.DataFrame(standard_predicted_dataset)
+    averaged_predicted_dataset = pd.DataFrame(standard_predicted_dataset)
 
-    standard_weights = perceptron.train_standard(bank_train_dataset, 10, 0.5)
-    bank_predicted_dataset = perceptron.predict_standard(bank_predicted_dataset, standard_weights)
+    # Results using standard perceptron
+    standard_weights = perceptron.train_standard(train_dataset, 10, 0.5)
+    standard_predicted_dataset = perceptron.predict_standard(standard_predicted_dataset, standard_weights)
+    standard_error = perceptron.compute_error(test_dataset['label'].to_numpy(), standard_predicted_dataset['label'].to_numpy())
     print('The weights using the standard perceptron are', standard_weights)
+    print('The standard perceptron error is', standard_error)
 
-    # tennis_train_path = os.path.join(script_directory, '..', 'Datasets', 'tennis', 'train.csv')
-    #  # Using tennis dataset
-    #     # Upload training dataset
-    # tennis_train_dataset = pd.read_csv(tennis_train_path, header=None)
-    # tennis_train_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
-    # tennis_features = {'Outlook': ['Sunny', 'Overcast', 'Rain'], 
-    #                    'Temp': ['Hot', 'Medium', 'Cool'], 
-    #                    'Humidity': ['High', 'Normal', 'Low'], 
-    #                    'Wind': ['Strong', 'Weak']}
-    #     # Upload testing dataset
-    # tennis_test_dataset = pd.read_csv(tennis_train_path, header=None)
-    # tennis_test_dataset.columns = ['Outlook','Temp','Humidity','Wind','label']
-    #     # Create copy of testing dataset for predicting
-    # tennis_predicted_dataset = pd.DataFrame(tennis_test_dataset)
-    # tennis_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
-    # tennis_tree = DT.ID3(tennis_train_dataset, tennis_features, 4, 6)
-    # tennis_predicted_dataset = DT.predict(tennis_tree, tennis_predicted_dataset, tennis_features)
-    # tennis_error = DT.prediction_error(tennis_test_dataset['label'].to_numpy(), tennis_predicted_dataset['label'].to_numpy())
-    # DT.print_tree(tennis_tree)
-    # print('The prediction error for this tree is', tennis_error)
-    # tennis_predicted_dataset = RF.random_forest(tennis_train_dataset, tennis_predicted_dataset, tennis_features, 500, 4)
-    # tennis_bagging_error = DT.prediction_error(tennis_test_dataset['label'].to_numpy(), tennis_predicted_dataset['label'].to_numpy())
-    # print('The prediction error for this tree is', tennis_bagging_error)
+    # Results using voted perceptron
+    voted_weights, votes = perceptron.train_voted(train_dataset, 10, 0.5)
+    voted_predicted_dataset = perceptron.predict_voted(voted_predicted_dataset, voted_weights, votes)
+    voted_error = perceptron.compute_error(test_dataset['label'].to_numpy(), voted_predicted_dataset['label'].to_numpy())
+    #print('The weights using the voted perceptron are', voted_weights)
+    for i in range(len(voted_weights)):
+        print(voted_weights[i])
+    print('The votes for the weight vectors using the voted perceptron are', votes)
+    print('The voted perceptron error is', voted_error)
+
+    # Results using averaged perceptron
+    averaged_weights = perceptron.train_averaged(train_dataset, 10, 0.5)
+    averaged_predicted_dataset = perceptron.predict_averaged(averaged_predicted_dataset, averaged_weights)
+    averaged_error = perceptron.compute_error(test_dataset['label'].to_numpy(), averaged_predicted_dataset['label'].to_numpy())
+    print('The weights using the averaged perceptron are', averaged_weights)
+    print('The averaged perceptron error is', averaged_error)
 
 if __name__ == "__main__":
     main()
