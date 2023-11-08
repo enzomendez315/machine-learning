@@ -5,24 +5,28 @@ from copy import deepcopy
 
 class Perceptron:
     def train_standard(self, train_dataset, epochs, learning_rate):
-        # Initialize weights
-        weights = [0 for i in range(train_dataset.shape[0])]
+        # Initialize weights. Bias is the first element
+        weights = [0.0 for i in range(len(train_dataset.columns))]
         for epoch in range(epochs):
             # Shuffle the data
             train_dataset = train_dataset.sample(frac=1.0)
             for index, dataset_row in train_dataset.iterrows():
                 row = dataset_row.tolist()
                 prediction = self._predict_row(row, weights)
-                actual_label = row[-1]
+                if row[-1] == 0.0:
+                    actual_label = -1.0
+                else:
+                    actual_label = 1.0
                 if prediction != actual_label:
+                    weights[0] += learning_rate * actual_label
                     for i in range(len(row) - 1):
                         # Update weights
                         weights[i+1] = weights[i+1] + learning_rate * actual_label * row[i]
         return weights
     
     def train_voted(self, train_dataset, epochs, learning_rate):
-        # Initialize weights
-        weights = [0 for i in range(train_dataset.shape[0])]
+        # Initialize weights. Bias is the first element
+        weights = [0.0 for i in range(len(train_dataset.columns))]
         weight_vectors = []
         votes = []
         vote_count = 0
@@ -46,9 +50,9 @@ class Perceptron:
         return weight_vectors, votes
     
     def train_averaged(self, train_dataset, epochs, learning_rate):
-        # Initialize weights
-        weights = [0 for i in range(train_dataset.shape[0])]
-        averages = [0 for i in range(train_dataset.shape[0])]
+        # Initialize weights. Bias is the first element
+        weights = [0 for i in range(len(train_dataset.columns))]
+        averages = [0 for i in range(len(train_dataset.columns))]
         for epoch in range(epochs):
             # Shuffle the data
             train_dataset = train_dataset.sample(frac=1.0)
@@ -114,6 +118,13 @@ class Perceptron:
             else:
                 dataset.at[index, 'label'] = 0
         return dataset
+    
+    def compute_error(self, actual_labels, predicted_labels):
+        incorrect_examples = 0
+        for i in range(len(actual_labels)):
+            if actual_labels[i] != predicted_labels[i]:
+                incorrect_examples += 1
+        return incorrect_examples / len(actual_labels)
         
 def main():
     # Get the directory of the script
@@ -138,8 +149,7 @@ def main():
 
     standard_weights = perceptron.train_standard(bank_train_dataset, 10, 0.5)
     bank_predicted_dataset = perceptron.predict_standard(bank_predicted_dataset, standard_weights)
-
-    print(standard_weights)
+    print('The weights using the standard perceptron are', standard_weights)
 
     # tennis_train_path = os.path.join(script_directory, '..', 'Datasets', 'tennis', 'train.csv')
     #  # Using tennis dataset
