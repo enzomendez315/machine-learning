@@ -15,4 +15,4 @@ Random Forest can be run by instantiating the RandomForest class and calling the
 ## Perceptron
 Perceptron can be run by instantiating the Perceptron class and calling one of three methods to train the algorithm: train_standard, train_voted or train_averaged. Regardless of what method is chosen to train the model, they all have 3 parameters: train_dataset, epochs, learning_rate. The train_dataset parameter is the dataset that will be used to train the model. The parameter epochs represents the number of times that we want to go through all the examples, updating the weights every time. The parameter learning_rate is used to assign the learning rate that will be used to correct mistakes at each iteration. Depending on what method is used to train the model, we have three methods that are used to predict labels for a test_dataset: predict_standard, predict_voted or predict_averaged. All of them use 2 parameters - a dataset that has no labels (so that the model can predict them) and a list of weights for every feature in the dataset.
 
-## SMV
+## SVM
