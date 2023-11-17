@@ -1,10 +1,11 @@
 import os
 import numpy as np
 import pandas as pd
+from scipy.optimize import minimize
 from copy import deepcopy
 
 class SMV:
-    def train_standard(self, train_dataset, epochs, learning_rate):
+    def train_primal(self, train_dataset, epochs, learning_rate, C):
         # Initialize weights. Bias is the first element
         weights = [0.0 for i in range(len(train_dataset.columns))]
         for epoch in range(epochs):
