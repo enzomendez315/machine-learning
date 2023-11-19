@@ -14,6 +14,7 @@ class SVM:
             for index, dataset_row in train_dataset.iterrows():
                 row = dataset_row.tolist()
                 prediction = self._predict_row(row, weights)
+                gamma = next(learning_rate)
                 # Set the correct label for calculation
                 if row[-1] == 0.0:
                     actual_label = -1.0
@@ -110,6 +111,20 @@ def main():
     test_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
 
     C_values = [100/873, 500/873, 700/873]
+
+    def learning_rate_A(initial_gamma, alpha):
+        #yield initial_gamma
+        t = 0
+        while True:
+            yield initial_gamma / (1 + (initial_gamma/alpha) * t)
+            t += 1
+    
+    def learning_rate_B(initial_gamma):
+        #yield initial_gamma
+        t = 0
+        while True:
+            yield initial_gamma / (1 + t)
+            t += 1
 
     # Results using primal svm
     for C in C_values:
