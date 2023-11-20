@@ -2,83 +2,55 @@ import os
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
-from copy import deepcopy
 
 class SVM:
     def train_primal(self, train_dataset, epochs, learning_rate, C=1.0):
-        # Initialize weights. Bias is the first element
-        weights = [0.0 for i in range(len(train_dataset.columns))]
+        # Initialize weights
+        weights = np.zeros(len(train_dataset.columns) - 1)
+        # Add bias term at the end of weights vector
+        weights = np.append(weights, 1)
         for epoch in range(epochs):
             # Shuffle the data
             train_dataset = train_dataset.sample(frac=1.0)
             for index, dataset_row in train_dataset.iterrows():
-                row = dataset_row.tolist()
-                prediction = self._predict_row(row, weights)
-                gamma = next(learning_rate)
+                row = np.array(dataset_row.tolist())
                 # Set the correct label for calculation
                 if row[-1] == 0.0:
                     actual_label = -1.0
                 else:
                     actual_label = 1.0
-                if prediction != actual_label:
-                    weights[0] += learning_rate * actual_label
-                    for i in range(len(row) - 1):
-                        # Update weights
-                        weights[i+1] = weights[i+1] + learning_rate * actual_label * row[i]
-        return weights
+                # Remove label and add bias to x
+                row = np.append(row[:-1], 1)
+                gamma = next(learning_rate)
+                N = train_dataset.shape[0]
+                prediction = actual_label * np.dot(weights, row)
+                if prediction < 1:
+                    weights = weights - gamma * np.append(weights[:-1], 0) + gamma * C * N * actual_label * row
+                else:
+                    weights[-1] = (1 - gamma) * weights[-1]
+        return weights.tolist()
+    
+    def _predict_row(self, row, weights, actual_label):
+        prediction = actual_label * np.dot(weights, row[:-1])
+        return prediction
+        
+    def predict_primal(self, dataset, weights):
+        # Bias is the last term of weights vector
+        weights = np.array(weights)
+        for index, dataset_row in dataset.iterrows():
+            row = dataset_row.tolist()[:-1]
+            row = np.array(row)
+            # Add bias to x
+            row = np.append(row, 1)
+            prediction = np.dot(weights, row)
+            if prediction >= 0.0:
+                dataset.at[index, 'label'] = 1
+            else:
+                dataset.at[index, 'label'] = 0
+        return dataset
     
     def hinge_loss(self, row):
         pass
-
-    def _predict_row(self, row, weights):
-        # The bias is the first element of weights vector
-        activation = weights[0]
-        for i in range(len(row) - 1):
-            # Compute the dot product for the rest of the elements
-            activation = activation + weights[i+1] * row[i]
-        if activation >= 0.0:
-            return 1
-        else:
-            return -1
-        
-    def predict_standard(self, dataset, weights):
-        for index, dataset_row in dataset.iterrows():
-            row = dataset_row.tolist()
-            prediction = self._predict_row(row, weights)
-            if prediction >= 0.0:
-                dataset.at[index, 'label'] = 1
-            else:
-                dataset.at[index, 'label'] = 0
-        return dataset
-
-    def predict_voted(self, dataset, weights, votes):
-        for index, dataset_row in dataset.iterrows():
-            row = dataset_row.tolist()
-            voted_prediction = 0
-            for i in range(len(weights)):
-                prediction = 0
-                for j in range(len(row) - 1):
-                    prediction = prediction + weights[i][j+1] * row[j]
-                if prediction >= 0.0:
-                    prediction = 1
-                else:
-                    prediction = -1
-                voted_prediction += votes[i] * prediction
-            if voted_prediction >= 0.0:
-                dataset.at[index, 'label'] = 1
-            else:
-                dataset.at[index, 'label'] = 0
-        return dataset
-
-    def predict_averaged(self, dataset, weights):
-        for index, dataset_row in dataset.iterrows():
-            row = dataset_row.tolist()
-            prediction = self._predict_row(row, weights)
-            if prediction >= 0.0:
-                dataset.at[index, 'label'] = 1
-            else:
-                dataset.at[index, 'label'] = 0
-        return dataset
     
     def compute_error(self, actual_labels, predicted_labels):
         incorrect_examples = 0
@@ -128,8 +100,9 @@ def main():
 
     # Results using primal svm
     for C in C_values:
-        primal_weights = svm.train_primal(train_dataset, 100, 0.1, C)
-
+        primal_weights = svm.train_primal(train_dataset, 100, learning_rate_A(0.1, 1), C)
+        train_predicted_dataset = svm.predict_primal(train_predicted_dataset, primal_weights)
+        test_predicted_dataset = svm.predict_primal(test_predicted_dataset, primal_weights)
         train_error = svm.compute_error(train_dataset['label'].to_numpy(), train_predicted_dataset['label'].to_numpy())
         test_error = svm.compute_error(test_dataset['label'].to_numpy(), test_predicted_dataset['label'].to_numpy())
         print('The training error for C =', C, 'in the primal domain is', train_error)
