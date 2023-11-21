@@ -56,20 +56,27 @@ class SVM:
         # Remove label and create a numpy array
         initial_x = np.array(initial_x.tolist()[:-1])
         labels = train_dataset['label'].to_numpy()
+        inputs = train_dataset.drop('label', axis=1).to_numpy()
         N = train_dataset.shape[0]
         # Create bound from 0 to C
         _bounds = Bounds(np.full((N), 0), np.full((N), C))
         _constraints = {'type': 'eq', 'fun': lambda alpha: np.dot(alpha, labels)}
-        alphas = minimize(self.loss(), initial_x, method='SLSQP', bounds=_bounds, constraints=_constraints)
+        def dual_objective(alpha):
+            # Find the objective function that is being maximized
+            result = 0
+            for i in range(N):
+                sum = 0
+                for j in range(N):
+                    sum += alpha[j] * labels[j] * kernel(inputs[i], inputs[j])
+                result += sum * alpha[i] * labels[i]
+            return 1/2 * result - np.sum(alpha)
+        alphas = minimize(dual_objective, initial_x, method='SLSQP', bounds=_bounds, constraints=_constraints)
         return alphas.x
 
-    def loss(self, N, row):
-        # Find the objective function that is being maximized
-        result = 0
-        for i in range(N):
-            sum = 0
+    def recover_dual_weights(self, alphas, dataset):
+        pass
 
-    def compute_dual_weights(self, row):
+    def recover_dual_bias(self, alphas, weights, dataset):
         pass
     
     def compute_error(self, actual_labels, predicted_labels):
