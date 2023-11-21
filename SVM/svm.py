@@ -50,14 +50,13 @@ class SVM:
                 dataset.at[index, 'label'] = 0
         return dataset
     
-    def train_dual(self, train_dataset, C, kernel, gammas):
-        # Pick a random row
-        initial_x = train_dataset.sample(n=1)
-        # Remove label and create a numpy array
-        initial_x = np.array(initial_x.tolist()[:-1])
+    def train_dual(self, train_dataset, C, kernel, gammas=None):
+        # # Pick a random row, remove label and create numpy array
+        # initial_x = train_dataset.sample(n=1).drop('label', axis=1).to_numpy()[0]
         labels = train_dataset['label'].to_numpy()
         inputs = train_dataset.drop('label', axis=1).to_numpy()
         N = train_dataset.shape[0]
+        initial_x = np.zeros(N)
         # Create bound from 0 to C
         _bounds = Bounds(np.full((N), 0), np.full((N), C))
         _constraints = {'type': 'eq', 'fun': lambda alpha: np.dot(alpha, labels)}
@@ -125,15 +124,23 @@ def main():
             yield initial_gamma / (1 + t)
             t += 1
 
-    # Results using primal svm
+    # # Results using primal svm
+    # for C in C_values:
+    #     primal_weights = svm.train_primal(train_dataset, 100, learning_rate_A(0.1, 1), C)
+    #     train_predicted_dataset = svm.predict_primal(train_predicted_dataset, primal_weights)
+    #     test_predicted_dataset = svm.predict_primal(test_predicted_dataset, primal_weights)
+    #     train_error = svm.compute_error(train_dataset['label'].to_numpy(), train_predicted_dataset['label'].to_numpy())
+    #     test_error = svm.compute_error(test_dataset['label'].to_numpy(), test_predicted_dataset['label'].to_numpy())
+    #     print('The training error for C =', C, 'in the primal domain is', train_error)
+    #     print('The test error for C =', C, 'in the primal domain is', test_error)
+
+    # Results using dual svm
     for C in C_values:
-        primal_weights = svm.train_primal(train_dataset, 100, learning_rate_A(0.1, 1), C)
-        train_predicted_dataset = svm.predict_primal(train_predicted_dataset, primal_weights)
-        test_predicted_dataset = svm.predict_primal(test_predicted_dataset, primal_weights)
-        train_error = svm.compute_error(train_dataset['label'].to_numpy(), train_predicted_dataset['label'].to_numpy())
-        test_error = svm.compute_error(test_dataset['label'].to_numpy(), test_predicted_dataset['label'].to_numpy())
-        print('The training error for C =', C, 'in the primal domain is', train_error)
-        print('The test error for C =', C, 'in the primal domain is', test_error)
+        dual_alphas = svm.train_dual(train_dataset, C, np.dot)
+
+
+
+
 
     # # Results using standard perceptron
     # standard_weights = perceptron.train_standard(train_dataset, 10, 0.5)
