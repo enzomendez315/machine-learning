@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
+from scipy.optimize import Bounds
 
 class SVM:
     def train_primal(self, train_dataset, epochs, learning_rate, C=1.0):
@@ -49,7 +50,26 @@ class SVM:
                 dataset.at[index, 'label'] = 0
         return dataset
     
-    def hinge_loss(self, row):
+    def train_dual(self, train_dataset, C, kernel, gammas):
+        # Pick a random row
+        initial_x = train_dataset.sample(n=1)
+        # Remove label and create a numpy array
+        initial_x = np.array(initial_x.tolist()[:-1])
+        labels = train_dataset['label'].to_numpy()
+        N = train_dataset.shape[0]
+        # Create bound from 0 to C
+        _bounds = Bounds(np.full((N), 0), np.full((N), C))
+        _constraints = {'type': 'eq', 'fun': lambda alpha: np.dot(alpha, labels)}
+        alphas = minimize(self.loss(), initial_x, method='SLSQP', bounds=_bounds, constraints=_constraints)
+        return alphas.x
+
+    def loss(self, N, row):
+        # Find the objective function that is being maximized
+        result = 0
+        for i in range(N):
+            sum = 0
+
+    def compute_dual_weights(self, row):
         pass
     
     def compute_error(self, actual_labels, predicted_labels):
