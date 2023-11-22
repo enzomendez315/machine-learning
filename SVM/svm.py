@@ -51,32 +51,54 @@ class SVM:
         return dataset
     
     def train_dual(self, train_dataset, C, kernel, gammas=None):
-        # # Pick a random row, remove label and create numpy array
-        # initial_x = train_dataset.sample(n=1).drop('label', axis=1).to_numpy()[0]
         labels = train_dataset['label'].to_numpy()
+        #labels[labels == 0.0] = -1.0
         inputs = train_dataset.drop('label', axis=1).to_numpy()
         N = train_dataset.shape[0]
         initial_x = np.zeros(N)
         # Create bound from 0 to C
         _bounds = Bounds(np.full((N), 0), np.full((N), C))
         _constraints = {'type': 'eq', 'fun': lambda alpha: np.dot(alpha, labels)}
+        # def dual_objective(alpha):
+        #     # Find the objective function that is being maximized
+        #     result = 0
+        #     for i in range(N):
+        #         sum = 0
+        #         for j in range(N):
+        #             sum += alpha[j] * labels[j] * kernel(inputs[i], inputs[j])
+        #         result += sum * alpha[i] * labels[i]
+        #     return 1/2 * result - np.sum(alpha)
         def dual_objective(alpha):
             # Find the objective function that is being maximized
-            result = 0
-            for i in range(N):
-                sum = 0
-                for j in range(N):
-                    sum += alpha[j] * labels[j] * kernel(inputs[i], inputs[j])
-                result += sum * alpha[i] * labels[i]
-            return 1/2 * result - np.sum(alpha)
+            kernel_labels = labels.T * kernel(inputs, inputs.T) * labels
+            sum = alpha.T.dot(kernel_labels[0,0] * alpha)
+            return 1/2 * sum - np.sum(alpha)
         alphas = minimize(dual_objective, initial_x, method='SLSQP', bounds=_bounds, constraints=_constraints)
-        return alphas.x
+        alphas = alphas.x
+        # Set values to be 0 or C
+        alphas[np.isclose(alphas, 0)] = 0
+        alphas[np.isclose(alphas, C)] = C
+        return alphas
 
     def recover_dual_weights(self, alphas, dataset):
-        pass
+        labels = dataset['label'].to_numpy()
+        labels[labels == 0.0] = -1.0
+        inputs = dataset.drop('label', axis=1).to_numpy()
+        # Initialize weights
+        weights = np.zeros(len(dataset.columns) - 1)
+        for i in range(alphas.size):
+            weights += inputs[i] * alphas[i] * labels[i]
+        return weights
+        #weights = np.sum(np.reshape(alphas * labels, (1, 872)) * inputs, axis=0)
+        #return np.sum((alphas * labels) * inputs, axis=0)
 
-    def recover_dual_bias(self, alphas, weights, dataset):
-        pass
+    def recover_dual_bias(self, alphas, dataset):
+        labels = dataset['label'].to_numpy()
+        inputs = dataset.drop('label', axis=1).to_numpy()
+        sum = np.zeros(dataset.shape[0])
+        for i in range(alphas.size):
+            sum += alphas[i] * labels[i] * np.dot(inputs, inputs.T)
+        return labels - sum
     
     def compute_error(self, actual_labels, predicted_labels):
         incorrect_examples = 0
@@ -137,6 +159,15 @@ def main():
     # Results using dual svm
     for C in C_values:
         dual_alphas = svm.train_dual(train_dataset, C, np.dot)
+        dual_weights = svm.recover_dual_weights(dual_alphas, train_dataset)
+        dual_bias = svm.recover_dual_bias(dual_alphas, train_dataset)
+        train_predicted_dataset = svm.predict_primal(train_predicted_dataset, dual_weights)
+        test_predicted_dataset = svm.predict_primal(test_predicted_dataset, dual_weights)
+        train_error = svm.compute_error(train_dataset['label'].to_numpy(), train_predicted_dataset['label'].to_numpy())
+        test_error = svm.compute_error(test_dataset['label'].to_numpy(), test_predicted_dataset['label'].to_numpy())
+        print('The training error for C =', C, 'in the dual domain is', train_error)
+        print('The test error for C =', C, 'in the dual domain is', test_error)
+
 
 
 
