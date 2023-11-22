@@ -52,22 +52,15 @@ class SVM:
     
     def train_dual(self, train_dataset, C, kernel, gammas=None):
         labels = train_dataset['label'].to_numpy()
-        #labels[labels == 0.0] = -1.0
+        labels[labels == 0.0] = -1.0
+        #labels = np.asmatrix(labels.reshape((872, 1)))
         inputs = train_dataset.drop('label', axis=1).to_numpy()
+        #inputs = np.asmatrix(inputs)
         N = train_dataset.shape[0]
         initial_x = np.zeros(N)
         # Create bound from 0 to C
         _bounds = Bounds(np.full((N), 0), np.full((N), C))
         _constraints = {'type': 'eq', 'fun': lambda alpha: np.dot(alpha, labels)}
-        # def dual_objective(alpha):
-        #     # Find the objective function that is being maximized
-        #     result = 0
-        #     for i in range(N):
-        #         sum = 0
-        #         for j in range(N):
-        #             sum += alpha[j] * labels[j] * kernel(inputs[i], inputs[j])
-        #         result += sum * alpha[i] * labels[i]
-        #     return 1/2 * result - np.sum(alpha)
         def dual_objective(alpha):
             # Find the objective function that is being maximized
             kernel_labels = labels.T * kernel(inputs, inputs.T) * labels
@@ -81,24 +74,44 @@ class SVM:
         return alphas
 
     def recover_dual_weights(self, alphas, dataset):
+        # Separate the labels
         labels = dataset['label'].to_numpy()
         labels[labels == 0.0] = -1.0
+        labels = np.asmatrix(labels.reshape((872, 1)))
+        # Separate the inputs
         inputs = dataset.drop('label', axis=1).to_numpy()
-        # Initialize weights
-        weights = np.zeros(len(dataset.columns) - 1)
-        for i in range(alphas.size):
-            weights += inputs[i] * alphas[i] * labels[i]
-        return weights
-        #weights = np.sum(np.reshape(alphas * labels, (1, 872)) * inputs, axis=0)
-        #return np.sum((alphas * labels) * inputs, axis=0)
+        inputs = np.asmatrix(inputs)
+        return np.sum((alphas * labels)[0,0] * inputs, axis=0)
+    
+        # # Initialize weights
+        # weights = np.zeros(len(dataset.columns) - 1)
+        # for i in range(alphas.size):
+        #     weights += inputs[i] * alphas[i] * labels[i]
+        # return weights
 
     def recover_dual_bias(self, alphas, dataset):
+        # Separate the labels
         labels = dataset['label'].to_numpy()
+        labels[labels == 0.0] = -1.0
+        labels = np.asmatrix(labels.reshape((labels.size, 1)))
+        # Separate the inputs
         inputs = dataset.drop('label', axis=1).to_numpy()
-        sum = np.zeros(dataset.shape[0])
-        for i in range(alphas.size):
-            sum += alphas[i] * labels[i] * np.dot(inputs, inputs.T)
-        return labels - sum
+        inputs = np.asmatrix(inputs)
+        return np.mean(labels - np.sum((alphas * labels)[0,0] * np.dot(inputs, inputs.T)))
+    
+        # labels = dataset['label'].to_numpy()
+        # labels[labels == 0.0] = -1.0
+        # inputs = dataset.drop('label', axis=1).to_numpy()
+        # bias = 0
+        # num_nonzero = 0
+        # for i in range(len(alphas)):
+        #     if alphas[i] > 1e-11:
+        #         inner_sum = 0
+        #         for j in range(len(alphas)):
+        #             inner_sum += alphas[j] * labels[j] * np.dot(inputs[i], inputs[j])
+        #         bias += labels[i] - inner_sum
+        #         num_nonzero += 1
+        # return bias / num_nonzero
     
     def compute_error(self, actual_labels, predicted_labels):
         incorrect_examples = 0
@@ -133,14 +146,12 @@ def main():
     C_values = [100/873, 500/873, 700/873]
 
     def learning_rate_A(initial_gamma, alpha):
-        #yield initial_gamma
         t = 0
         while True:
             yield initial_gamma / (1 + (initial_gamma/alpha) * t)
             t += 1
     
     def learning_rate_B(initial_gamma):
-        #yield initial_gamma
         t = 0
         while True:
             yield initial_gamma / (1 + t)
@@ -156,11 +167,21 @@ def main():
     #     print('The training error for C =', C, 'in the primal domain is', train_error)
     #     print('The test error for C =', C, 'in the primal domain is', test_error)
 
+    # for C in C_values:
+    #     primal_weights = svm.train_primal(train_dataset, 100, learning_rate_B(0.1), C)
+    #     train_predicted_dataset = svm.predict_primal(train_predicted_dataset, primal_weights)
+    #     test_predicted_dataset = svm.predict_primal(test_predicted_dataset, primal_weights)
+    #     train_error = svm.compute_error(train_dataset['label'].to_numpy(), train_predicted_dataset['label'].to_numpy())
+    #     test_error = svm.compute_error(test_dataset['label'].to_numpy(), test_predicted_dataset['label'].to_numpy())
+    #     print('The training error for C =', C, 'in the primal domain is', train_error)
+    #     print('The test error for C =', C, 'in the primal domain is', test_error)
+
     # Results using dual svm
     for C in C_values:
         dual_alphas = svm.train_dual(train_dataset, C, np.dot)
         dual_weights = svm.recover_dual_weights(dual_alphas, train_dataset)
         dual_bias = svm.recover_dual_bias(dual_alphas, train_dataset)
+        dual_weights = np.hstack([dual_weights, np.full((dual_weights.shape[0], 1), dual_bias)])
         train_predicted_dataset = svm.predict_primal(train_predicted_dataset, dual_weights)
         test_predicted_dataset = svm.predict_primal(test_predicted_dataset, dual_weights)
         train_error = svm.compute_error(train_dataset['label'].to_numpy(), train_predicted_dataset['label'].to_numpy())
@@ -168,34 +189,6 @@ def main():
         print('The training error for C =', C, 'in the dual domain is', train_error)
         print('The test error for C =', C, 'in the dual domain is', test_error)
 
-
-
-
-
-
-    # # Results using standard perceptron
-    # standard_weights = perceptron.train_standard(train_dataset, 10, 0.5)
-    # standard_predicted_dataset = perceptron.predict_standard(standard_predicted_dataset, standard_weights)
-    # standard_error = perceptron.compute_error(test_dataset['label'].to_numpy(), standard_predicted_dataset['label'].to_numpy())
-    # print('The weights using the standard perceptron are', standard_weights)
-    # print('The standard perceptron error is', standard_error)
-
-    # # Results using voted perceptron
-    # voted_weights, votes = perceptron.train_voted(train_dataset, 10, 0.5)
-    # voted_predicted_dataset = perceptron.predict_voted(voted_predicted_dataset, voted_weights, votes)
-    # voted_error = perceptron.compute_error(test_dataset['label'].to_numpy(), voted_predicted_dataset['label'].to_numpy())
-    # #print('The weights using the voted perceptron are', voted_weights)
-    # for i in range(len(voted_weights)):
-    #     print(voted_weights[i])
-    # print('The votes for the weight vectors using the voted perceptron are', votes)
-    # print('The voted perceptron error is', voted_error)
-
-    # # Results using averaged perceptron
-    # averaged_weights = perceptron.train_averaged(train_dataset, 10, 0.5)
-    # averaged_predicted_dataset = perceptron.predict_averaged(averaged_predicted_dataset, averaged_weights)
-    # averaged_error = perceptron.compute_error(test_dataset['label'].to_numpy(), averaged_predicted_dataset['label'].to_numpy())
-    # print('The weights using the averaged perceptron are', averaged_weights)
-    # print('The averaged perceptron error is', averaged_error)
 
 if __name__ == "__main__":
     main()
