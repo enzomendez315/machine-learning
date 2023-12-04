@@ -26,14 +26,6 @@ class Neural_Network:
         return network, outputs
     
     def compute_forward_pass(self, network, outputs, row):
-        # for index, dataset_row in dataset_inputs.iterrows():
-        #     inputs = dataset_row.tolist()
-        #     row = np.array(dataset_row.tolist())
-        #     # Add bias to x
-        #     row = np.append(row, 1)
-        #     for layer in network:
-        #         pass
-
         inputs = row
         # Add bias to x
         row = np.append(row, 1)
@@ -41,12 +33,20 @@ class Neural_Network:
             new_inputs = []
             for neuron_index, neuron in enumerate(layer):
                 activation = np.dot(neuron, row)
-                output = 1.0 / (1.0 + np.exp(-activation))
+                if layer_index != len(network) - 1:
+                    # Using the sigmoid activation function
+                    output = 1.0 / (1.0 + np.exp(-activation))
+                else:
+                    # Using linear combination for output layer
+                    output = activation
                 outputs[layer_index][neuron_index] = output
                 new_inputs.append(output)
             inputs = new_inputs
         # Return the output from the last layer
         return inputs
+    
+    def compute_backpropagation(self, network):
+        pass
 
     def train(self, network):
         pass
@@ -84,6 +84,11 @@ def main():
     test_labels = test_dataset['label'].to_numpy().copy()
     test_labels[test_labels == 0.0] = -1.0
 
+    def learning_rate(initial_gamma, alpha):
+        t = 0
+        while True:
+            yield initial_gamma / (1 + (initial_gamma / alpha) * t)
+            t += 1
 
     row = train_dataset.drop('label', axis=1).sample(n=1).to_numpy()
     network, outputs = nn.create_network()
