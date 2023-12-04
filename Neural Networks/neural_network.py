@@ -1,28 +1,52 @@
 import os
 import numpy as np
 import pandas as pd
-from random import random
 
 class Neural_Network:
     def create_network(self, number_of_inputs=4, number_of_hidden_neurons=4, number_of_outputs=1):
-        network = []
-        # Each nested array represents the weights of all the neurons from 
+        # Each layer has nested arrays representing the neurons in that layer.
+        # Each nested array contains the weights of all the neurons from 
         # the previous layer (including the bias) to one neuron from the current layer.
-
-        # hidden_layer1 = [[random() for i in range(number_of_inputs + 1)] for i in range(number_of_hidden_neurons)]
-        # hidden_layer2 = [[random() for i in range(number_of_hidden_neurons + 1)] for i in range(number_of_hidden_neurons)]
-        # output_layer = [[random() for i in range(number_of_hidden_neurons + 1)] for i in range(number_of_outputs)]
-        
+        network = []
         hidden_layer1 = np.random.rand(number_of_hidden_neurons, number_of_inputs + 1)
         hidden_layer2 = np.random.rand(number_of_hidden_neurons, number_of_hidden_neurons + 1)
         output_layer = np.random.rand(number_of_outputs, number_of_hidden_neurons + 1)
         network.append(hidden_layer1)
         network.append(hidden_layer2)
         network.append(output_layer)
-        return network
+
+        outputs = []
+        hidden_layer1_outputs = np.zeros(number_of_hidden_neurons)
+        hidden_layer2_outputs = np.zeros(number_of_hidden_neurons)
+        output_layer_outputs = np.zeros(number_of_outputs)
+        outputs.append(hidden_layer1_outputs)
+        outputs.append(hidden_layer2_outputs)
+        outputs.append(output_layer_outputs)
+
+        return network, outputs
     
-    def compute_forward_pass(self):
-        pass
+    def compute_forward_pass(self, network, outputs, row):
+        # for index, dataset_row in dataset_inputs.iterrows():
+        #     inputs = dataset_row.tolist()
+        #     row = np.array(dataset_row.tolist())
+        #     # Add bias to x
+        #     row = np.append(row, 1)
+        #     for layer in network:
+        #         pass
+
+        inputs = row
+        # Add bias to x
+        row = np.append(row, 1)
+        for layer_index, layer in enumerate(network):
+            new_inputs = []
+            for neuron_index, neuron in enumerate(layer):
+                activation = np.dot(neuron, row)
+                output = 1.0 / (1.0 + np.exp(-activation))
+                outputs[layer_index][neuron_index] = output
+                new_inputs.append(output)
+            inputs = new_inputs
+        # Return the output from the last layer
+        return inputs
 
     def train(self, network):
         pass
@@ -59,6 +83,17 @@ def main():
     test_inputs = test_dataset.drop('label', axis=1).to_numpy()
     test_labels = test_dataset['label'].to_numpy().copy()
     test_labels[test_labels == 0.0] = -1.0
+
+
+    row = train_dataset.drop('label', axis=1).sample(n=1).to_numpy()
+    network, outputs = nn.create_network()
+    inputs = nn.compute_forward_pass(network, outputs, row)
+
+    print(network)
+    print()
+    print(outputs)
+    print()
+    print(inputs)
 
 if __name__ == "__main__":
     main()
