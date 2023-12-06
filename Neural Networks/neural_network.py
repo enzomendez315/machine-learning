@@ -45,7 +45,7 @@ class Neural_Network:
                     # Using the sigmoid activation function
                     output = 1.0 / (1.0 + np.exp(-activation))
                 else:
-                    # Using linear combination for output layer
+                    # Using only linear combination for output layer
                     output = activation
                 outputs[layer_index][neuron_index] = output
                 new_inputs.append(output)
@@ -54,10 +54,10 @@ class Neural_Network:
         return inputs
     
     def compute_backpropagation(self, network, outputs, losses, actual_label):
-        # for layer_index in reversed(range(len(network))):
-        #     layer = network[layer_index]
-
-        for layer_index, layer in enumerate(reversed(range(len(network)))):
+        for layer_index in reversed(range(len(network))):
+            layer = network[layer_index]
+        # for layer_index, layer in enumerate(reversed(range(len(network)))):
+        # for layer_index, layer in enumerate(reversed(network)):
             errors = []
             # For all the layers except the output layer
             if layer_index != len(network) - 1:
@@ -65,7 +65,7 @@ class Neural_Network:
                     error = 0.0
                     for previous_neuron_index in range(len(network[layer_index + 1])):
                         # Add up loss from previous layer
-                        error += network[neuron_index] * losses[layer_index + 1][previous_neuron_index]
+                        error += network[layer_index + 1][previous_neuron_index] * losses[layer_index + 1][previous_neuron_index]
                         errors.append(error)
             # For the output layer only
             else:
@@ -122,6 +122,7 @@ def main():
     row = train_dataset.drop('label', axis=1).sample(n=1).to_numpy()
     network, outputs, losses = nn.create_network()
     final_output = nn.compute_forward_pass(network, outputs, row)
+    nn.compute_backpropagation(network, outputs, losses, train_dataset['label'].sample(n=1).iloc[0])
 
     print('The network is', network)
     print()
