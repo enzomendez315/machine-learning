@@ -39,103 +39,43 @@ class Neural_Network:
     def compute_backpropagation(self, network, actual_label):
         for layer_index in reversed(range(len(network))):
             layer = network[layer_index]
-        # for layer_index, layer in enumerate(reversed(range(len(network)))):
-        # for layer_index, layer in enumerate(reversed(network)):
-            errors = []
-            # For all the layers except the output layer
+            losses = []
+            # For all the hidden layers
             if layer_index != len(network) - 1:
                 for neuron_index in range(len(layer)):
-                    error = 0.0
-                    for previous_neuron_index in range(len(network[layer_index + 1])):
+                    loss = 0.0
+                    for previous_neuron in network[layer_index + 1]:
                         # Add up loss from previous layer
-                        error += network[layer_index + 1][previous_neuron_index] * losses[layer_index + 1][previous_neuron_index]
-                        errors.append(error)
+                        loss += previous_neuron['weights'][neuron_index] * previous_neuron['loss']
+                        losses.append(loss)
             # For the output layer only
             else:
                 for neuron_index, neuron in enumerate(layer):
-                    predicted_label = outputs[layer_index][neuron_index]
-                    errors.append(predicted_label - actual_label)
+                    predicted_label = neuron['output']
+                    losses.append(predicted_label - actual_label)
             for neuron_index, neuron in enumerate(layer):
-                neuron_output = outputs[layer_index][neuron_index]
+                neuron_output = neuron['output']
                 # Compute loss using the derivative of the sigmoid function
-                losses[layer_index][neuron_index] = errors[neuron_index] * neuron_output * (1.0 - neuron_output)
+                neuron['loss'] = losses[neuron_index] * neuron_output * (1.0 - neuron_output)
 
-    # def create_network(self, number_of_inputs=4, number_of_hidden_neurons=4, number_of_outputs=1):
-    #     # Each layer has nested arrays representing the neurons in that layer.
-    #     # Each nested array contains the weights of all the neurons from 
-    #     # the previous layer (including the bias) to one neuron from the current layer.
-    #     network = []
-    #     hidden_layer1 = np.random.rand(number_of_hidden_neurons, number_of_inputs + 1)
-    #     hidden_layer2 = np.random.rand(number_of_hidden_neurons, number_of_hidden_neurons + 1)
-    #     output_layer = np.random.rand(number_of_outputs, number_of_hidden_neurons + 1)
-    #     network.append(hidden_layer1)
-    #     network.append(hidden_layer2)
-    #     network.append(output_layer)
-
-    #     outputs = []
-    #     hidden_layer1_outputs = np.zeros(number_of_hidden_neurons)
-    #     hidden_layer2_outputs = np.zeros(number_of_hidden_neurons)
-    #     output_layer_outputs = np.zeros(number_of_outputs)
-    #     outputs.append(hidden_layer1_outputs)
-    #     outputs.append(hidden_layer2_outputs)
-    #     outputs.append(output_layer_outputs)
-
-    #     losses = []
-    #     hidden_layer1_losses = np.zeros(number_of_hidden_neurons)
-    #     hidden_layer2_losses = np.zeros(number_of_hidden_neurons)
-    #     output_layer_losses = np.zeros(number_of_outputs)
-    #     losses.append(hidden_layer1_losses)
-    #     losses.append(hidden_layer2_losses)
-    #     losses.append(output_layer_losses)
-
-    #     return network, outputs, losses
-    
-    # def compute_forward_pass(self, network, outputs, row):
-    #     inputs = row
-    #     # Add bias to x
-    #     row = np.append(row, 1)
-    #     for layer_index, layer in enumerate(network):
-    #         new_inputs = []
-    #         for neuron_index, neuron in enumerate(layer):
-    #             activation = np.dot(neuron, row)
-    #             if layer_index != len(network) - 1:
-    #                 # Using the sigmoid activation function
-    #                 output = 1.0 / (1.0 + np.exp(-activation))
-    #             else:
-    #                 # Using only linear combination for output layer
-    #                 output = activation
-    #             outputs[layer_index][neuron_index] = output
-    #             new_inputs.append(output)
-    #         inputs = new_inputs
-    #     # Return the output from the last layer
-    #     return inputs
-    
-    # def compute_backpropagation(self, network, outputs, losses, actual_label):
-    #     for layer_index in reversed(range(len(network))):
-    #         layer = network[layer_index]
-    #     # for layer_index, layer in enumerate(reversed(range(len(network)))):
-    #     # for layer_index, layer in enumerate(reversed(network)):
-    #         errors = []
-    #         # For all the layers except the output layer
-    #         if layer_index != len(network) - 1:
-    #             for neuron_index in range(len(layer)):
-    #                 error = 0.0
-    #                 for previous_neuron_index in range(len(network[layer_index + 1])):
-    #                     # Add up loss from previous layer
-    #                     error += network[layer_index + 1][previous_neuron_index] * losses[layer_index + 1][previous_neuron_index]
-    #                     errors.append(error)
-    #         # For the output layer only
-    #         else:
-    #             for neuron_index, neuron in enumerate(layer):
-    #                 predicted_label = outputs[layer_index][neuron_index]
-    #                 errors.append(predicted_label - actual_label)
-    #         for neuron_index, neuron in enumerate(layer):
-    #             neuron_output = outputs[layer_index][neuron_index]
-    #             # Compute loss using the derivative of the sigmoid function
-    #             losses[layer_index][neuron_index] = errors[neuron_index] * neuron_output * (1.0 - neuron_output)
-
-    def train(self, network):
-        pass
+    def train(self, network, train_dataset, epochs, learning_rate):
+        for epoch in range(epochs):
+            # Shuffle the data
+            train_dataset = train_dataset.sample(frac=1.0)
+            for index, dataset_row in train_dataset.iterrows():
+                actual_label = dataset_row['label']
+                row = dataset_row.tolist()[:-1]
+                predicted_label = self.compute_forward_pass(network, row)
+                self.compute_backpropagation(network, actual_label)
+                gamma = next(learning_rate)
+                for layer_index, layer in enumerate(network):
+                    inputs = row
+                    if layer_index != 0:
+                        inputs = [neuron['output'] for neuron in network[layer_index - 1]]
+                    for neuron in layer:
+                        for output_index in range(len(inputs)):
+                            neuron['weights'][output_index] -= gamma * neuron['loss'] * inputs[output_index]
+                        neuron['weights'][-1] -= gamma * neuron['loss']
 
     def predict(self):
         pass
@@ -178,8 +118,11 @@ def main():
 
     row = train_dataset.drop('label', axis=1).sample(n=1).to_numpy()
     network = nn.create_network()
-    final_output = nn.compute_forward_pass(network, row)
-    # nn.compute_backpropagation(network, outputs, losses, train_dataset['label'].sample(n=1).iloc[0])
+    nn.train(network, train_dataset, 100, learning_rate(0.1, 1))
+    # final_output = nn.compute_forward_pass(network, row)
+    # print('The network is', network)
+    # print()
+    # nn.compute_backpropagation(network, train_dataset['label'].sample(n=1).iloc[0])
 
     print('The network is', network)
     # print()
