@@ -24,6 +24,7 @@ class Neural_Network:
             new_inputs = []
             for neuron in layer:
                 activation = np.dot(neuron['weights'], row)
+                activation = np.clip(activation, 1e-7, 1-1e-7)
                 if layer_index != len(network) - 1:
                     # Using the sigmoid activation function for hidden layers
                     output = 1.0 / (1.0 + np.exp(-activation))
@@ -58,7 +59,7 @@ class Neural_Network:
                 # Compute loss using the derivative of the sigmoid function
                 neuron['loss'] = losses[neuron_index] * neuron_output * (1.0 - neuron_output)
 
-    def train(self, network, train_dataset, epochs, learning_rate):
+    def train(self, network, train_dataset, learning_rate, epochs=100):
         for epoch in range(epochs):
             # Shuffle the data
             train_dataset = train_dataset.sample(frac=1.0)
@@ -70,11 +71,14 @@ class Neural_Network:
                 gamma = next(learning_rate)
                 for layer_index, layer in enumerate(network):
                     inputs = row
+                    np.append(inputs, 1)
                     if layer_index != 0:
                         inputs = [neuron['output'] for neuron in network[layer_index - 1]]
                     for neuron in layer:
                         for output_index in range(len(inputs)):
+                            # Update the weights
                             neuron['weights'][output_index] -= gamma * neuron['loss'] * inputs[output_index]
+                        # Update the bias
                         neuron['weights'][-1] -= gamma * neuron['loss']
 
     def predict(self):
@@ -118,7 +122,9 @@ def main():
 
     row = train_dataset.drop('label', axis=1).sample(n=1).to_numpy()
     network = nn.create_network()
-    nn.train(network, train_dataset, 100, learning_rate(0.1, 1))
+    print(network)
+    nn.train(network, train_dataset, learning_rate(0.1, 1))
+    print()
     # final_output = nn.compute_forward_pass(network, row)
     # print('The network is', network)
     # print()
