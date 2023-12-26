@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 
-class Neural_Network:
+class NeuralNetwork:
     def create_network(self, number_of_inputs=4, number_of_hidden_neurons=4, number_of_outputs=1):
         # Each layer has nested dictionaries representing the neurons in that layer.
         # Each dictionary contains an array with the weights of all the neurons from 
@@ -122,7 +122,7 @@ def main():
     bank_train_path = os.path.join(script_directory, '..', 'Datasets', 'bank-note', 'train.csv')
     bank_test_path = os.path.join(script_directory, '..', 'Datasets', 'bank-note', 'test.csv')
 
-    nn = Neural_Network()
+    nn = NeuralNetwork()
 
     # Using bank dataset
         # Upload training dataset
